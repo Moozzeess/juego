@@ -1,0 +1,7 @@
+id,texto,efecto,trago_segundos
+1,"Salvado sin beber",salvar,0
+2,"Cambia por beber 2 segundos",cambiar,2
+3,"Salvado sin beber",salvar,0
+4,"Cambia por beber 3 segundos",cambiar,3
+5,"Salvado sin beber",salvar,0
+6,"Cambia por beber 1 segundo",cambiar,1
