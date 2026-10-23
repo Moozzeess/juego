@@ -1,6 +1,6 @@
 /**
- * Prueba 13 (seccion 8): La validacion rechaza archivos sin columnas obligatorias
- * y omite filas invalidas con su motivo.
+ * Prueba 13 (seccion 8): La validacion acepta archivos con columnas obligatorias minimas
+ * y genera aleatoriamente los valores faltantes.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -8,34 +8,34 @@ import {
   validarColumnas,
   validarFilas,
   validarArchivo,
+  normalizarColumnas,
 } from '../src/data/validacion.js'
 
 describe('Prueba 13: Validacion de archivos', () => {
   describe('Validacion de columnas', () => {
-    it('rechaza archivo de actividades sin columnas obligatorias', () => {
+    it('acepta archivo de actividades con columnas minimas (id, texto)', () => {
       const encabezados = ['id', 'texto']
       const resultado = validarColumnas(encabezados, 'actividades')
 
-      expect(resultado.valido).toBe(false)
-      expect(resultado.faltantes).toContain('trago_segundos')
+      expect(resultado.valido).toBe(true)
+      expect(resultado.faltantes).toEqual([])
     })
 
-    it('rechaza archivo de comodines sin la columna efecto', () => {
+    it('acepta archivo de comodines con columnas minimas (id, texto)', () => {
       const encabezados = ['id', 'texto']
       const resultado = validarColumnas(encabezados, 'comodines')
 
-      expect(resultado.valido).toBe(false)
-      expect(resultado.faltantes).toContain('efecto')
+      expect(resultado.valido).toBe(true)
+      expect(resultado.faltantes).toEqual([])
     })
 
     it('rechaza archivo de castigos sin columnas obligatorias', () => {
-      const encabezados = ['nombre']
+      const encabezados = ['categoria']
       const resultado = validarColumnas(encabezados, 'castigos')
 
       expect(resultado.valido).toBe(false)
       expect(resultado.faltantes).toContain('id')
       expect(resultado.faltantes).toContain('texto')
-      expect(resultado.faltantes).toContain('duracion_rondas')
     })
 
     it('acepta archivo con todas las columnas obligatorias', () => {
@@ -45,59 +45,80 @@ describe('Prueba 13: Validacion de archivos', () => {
       expect(resultado.valido).toBe(true)
       expect(resultado.faltantes).toEqual([])
     })
+
+    it('acepta nombres alternativos de columnas', () => {
+      const encabezados = ['ID', 'Actividad']
+      const resultado = validarColumnas(encabezados, 'actividades')
+
+      expect(resultado.valido).toBe(true)
+      expect(resultado.faltantes).toEqual([])
+    })
+  })
+
+  describe('Normalizacion de columnas', () => {
+    it('mapea nombres de columnas alternativos a nombres internos', () => {
+      const encabezados = ['ID', 'Actividad', 'Descripcion']
+      const mapeo = normalizarColumnas(encabezados, 'actividades')
+
+      expect(mapeo['ID']).toBe('id')
+      expect(mapeo['Actividad']).toBe('texto')
+    })
+
+    it('mapea columnas de castigos con nombres alternativos', () => {
+      const encabezados = ['ID', 'Nombre', 'Descripcion_Penitencia']
+      const mapeo = normalizarColumnas(encabezados, 'castigos')
+
+      expect(mapeo['ID']).toBe('id')
+      expect(mapeo['Nombre']).toBe('texto')
+    })
   })
 
   describe('Validacion de filas', () => {
-    it('omite filas con trago_segundos invalido e informa el motivo', () => {
+    it('genera trago_segundos aleatorio cuando falta', () => {
       const filas = [
-        { id: '1', texto: 'Actividad valida', trago_segundos: '5' },
-        { id: '2', texto: 'Actividad invalida', trago_segundos: '-1' },
-        { id: '3', texto: 'Otra invalida', trago_segundos: 'abc' },
-        { id: '4', texto: 'Otra valida', trago_segundos: '3' },
+        { id: '1', texto: 'Actividad sin trago' },
       ]
 
-      const resultado = validarFilas(filas, 'actividades')
+      const resultado = validarFilas(filas, 'actividades', {})
 
-      expect(resultado.datos.length).toBe(2)
-      expect(resultado.errores.length).toBe(2)
-      expect(resultado.errores[0]).toContain('Fila 3')
-      expect(resultado.errores[1]).toContain('Fila 4')
+      expect(resultado.datos.length).toBe(1)
+      expect(resultado.datos[0].trago_segundos).toBeGreaterThan(0)
+      expect(resultado.datos[0].trago_segundos).toBeLessThanOrEqual(15)
     })
 
     it('omite filas con texto vacio', () => {
       const filas = [
-        { id: '1', texto: '', trago_segundos: '5' },
-        { id: '2', texto: 'Actividad ok', trago_segundos: '3' },
+        { id: '1', texto: '' },
+        { id: '2', texto: 'Actividad ok' },
       ]
 
-      const resultado = validarFilas(filas, 'actividades')
+      const resultado = validarFilas(filas, 'actividades', {})
 
       expect(resultado.datos.length).toBe(1)
       expect(resultado.errores.length).toBe(1)
     })
 
-    it('valida comodines con efecto invalido', () => {
+    it('genera efecto aleatorio para comodines sin efecto', () => {
       const filas = [
-        { id: '1', texto: 'Te salvaste', efecto: 'salvar' },
-        { id: '2', texto: 'Efecto raro', efecto: 'volar' },
+        { id: '1', texto: 'Comodin sin efecto' },
       ]
 
-      const resultado = validarFilas(filas, 'comodines')
+      const resultado = validarFilas(filas, 'comodines', {})
 
       expect(resultado.datos.length).toBe(1)
-      expect(resultado.errores.length).toBe(1)
-      expect(resultado.errores[0]).toContain("'efecto'")
+      expect(resultado.datos[0].efecto).toMatch(/salvar|cambiar/)
     })
 
-    it('castigos con duracion_rondas vacia se interpretan como 0', () => {
+    it('genera duracion_rondas aleatoria cuando falta', () => {
       const filas = [
-        { id: '1', texto: 'Castigo rapido', duracion_rondas: '' },
+        { id: '1', texto: 'Castigo sin duracion' },
       ]
 
-      const resultado = validarFilas(filas, 'castigos')
+      const resultado = validarFilas(filas, 'castigos', {})
 
       expect(resultado.datos.length).toBe(1)
-      expect(resultado.datos[0].duracion_rondas).toBe(0)
+      expect(resultado.datos[0].duracion_rondas).toBeGreaterThan(0)
+      expect(resultado.datos[0].duracion_rondas).toBeLessThanOrEqual(5)
     })
   })
 
@@ -131,10 +152,24 @@ describe('Prueba 13: Validacion de archivos', () => {
       expect(resultado.errores.length).toBe(0)
     })
 
+    it('acepta archivo con columnas minimas y genera valores faltantes', () => {
+      const filas = [
+        { id: '1', texto: 'Actividad sin trago' },
+        { id: '2', texto: 'Otra actividad' },
+      ]
+
+      const resultado = validarArchivo(filas, 'actividades')
+
+      expect(resultado.valido).toBe(true)
+      expect(resultado.datos.length).toBe(2)
+      expect(resultado.datos[0].trago_segundos).toBeGreaterThan(0)
+      expect(resultado.datos[1].trago_segundos).toBeGreaterThan(0)
+    })
+
     it('un archivo sin ninguna fila valida no es valido', () => {
       const filas = [
-        { id: '1', texto: '', trago_segundos: '5' },
-        { id: '2', texto: 'Ok', trago_segundos: '-1' },
+        { id: '1', texto: '' },
+        { id: '', texto: 'Ok' },
       ]
 
       const resultado = validarArchivo(filas, 'actividades')

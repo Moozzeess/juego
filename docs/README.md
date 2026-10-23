@@ -17,7 +17,8 @@ juego/
 │   │   ├── PanelJuez.jsx        # Panel de confirmación del juez
 │   │   ├── PanelApoyo.jsx       # Panel con historial y base de datos
 │   │   ├── Desempate.jsx        # Mini-juegos de desempate
-│   │   └── ModalCierre.jsx      # Modal de cierre con podio y estadísticas
+│   │   ├── ModalCierre.jsx      # Modal de cierre con podio y estadísticas
+│   │   └── ModalReglas.jsx      # Modal de consulta de reglas del juego
 │   ├── data/                # Carga y validación de datos
 │   │   └── validacion.js        # Validación de archivos CSV/XLSX
 │   ├── logic/               # Lógica del juego en JavaScript puro
@@ -46,7 +47,10 @@ juego/
 │   ├── cierre.test.js
 │   ├── casoslimite.test.js
 │   └── validacion.test.js
+├── docs/                   # Documentación y referencias visuales
+│   └── referencia-interfaz.png
 ├── AGENTS.md               # Especificaciones completas del juego
+├── DISEÑO_INTERFAZ.md      # Especificación visual de la interfaz de partida
 ├── vite.config.js          # Configuración de Vite
 ├── tailwind.config.js      # Configuración de Tailwind CSS
 ├── postcss.config.js       # Configuración de PostCSS

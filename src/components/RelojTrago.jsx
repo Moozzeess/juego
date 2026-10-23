@@ -4,12 +4,13 @@ import { etiquetas } from '../ui/etiquetas';
 /**
  * Componente del reloj de trago.
  * Muestra una cuenta regresiva visual de trago_segundos hasta 0.
- * Es solo un indicador visual, no afecta el puntaje ni bloquea acciones.
+ * Al finalizar, despacha una accion para pasar a la fase de confirmacion del juez.
  * 
  * @param {number} segundos - Segundos a contar.
  * @param {boolean} activo - Indica si el reloj está activo.
+ * @param {Function} dispatch - Funcion para despachar acciones al reducer.
  */
-function RelojTrago({ segundos, activo }) {
+function RelojTrago({ segundos, activo, dispatch }) {
   const [tiempoRestante, setTiempoRestante] = useState(segundos);
 
   useEffect(() => {
@@ -23,6 +24,10 @@ function RelojTrago({ segundos, activo }) {
       setTiempoRestante(prev => {
         if (prev <= 1) {
           clearInterval(intervalo);
+          // Al llegar a 0, despachar accion para pasar a confirmacion
+          dispatch({
+            tipo: 'FINALIZAR_RELOJ'
+          });
           return 0;
         }
         return prev - 1;
@@ -30,7 +35,7 @@ function RelojTrago({ segundos, activo }) {
     }, 1000);
 
     return () => clearInterval(intervalo);
-  }, [activo, tiempoRestante]);
+  }, [activo, tiempoRestante, dispatch]);
 
   if (!activo) return null;
 

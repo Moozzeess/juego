@@ -1,0 +1,11 @@
+ID,Nombre,Descripcion_Efecto
+C1,Escudo de Agua,Pasa la prueba o reto actual sin sufrir ningún castigo o penalización.
+C2,Rebotar (Espejo),"Redirige el reto, la pregunta o la prueba al jugador situado a tu izquierda."
+C3,Transferencia,Elige a un compañero voluntario para que cumpla el reto o prueba por ti.
+C4,Pista Extra,"Obtén una pista adicional en cualquier juego de adivinanzas, mímica o trivia."
+C5,Silencio Comprado,Toma un vaso completo de agua de un solo trago para no tener que responder una pregunta incómoda.
+C6,Abogado Defensor,Elige a un jugador para que argumente a tu favor y trate de exonerarte de una prueba ante la mesa.
+C7,Cancelación Total,Anula la actividad o reto actual para todo el grupo durante esta ronda.
+C8,Duplicador,Obliga al siguiente jugador de la ronda a cumplir exactamente la misma prueba que realizaste tú.
+C9,Inmunidad Temporal,Quedas exento de ser seleccionado o votado durante la siguiente ronda del juego.
+C10,Cambio de Regla,Inventa una regla absurda que todos deban seguir durante las próximas 2 rondas (ej. hablar en susurros).

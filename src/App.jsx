@@ -20,7 +20,7 @@ const estadoInicial = {
     castigos: []
   },
   estado_partida: {
-    fase: 'advertencia',
+    fase: 'configuracion',
     ronda_actual: 1,
     indice_turno: 0,
     jugador_activo: null,
@@ -110,6 +110,20 @@ function reducer(estado, accion) {
         }
       };
 
+    case 'FINALIZAR_RELOJ':
+      // El reloj solo pasa a la fase de confirmacion del juez
+      // No suma puntos automaticamente; el juez decide si cumplio o no
+      return {
+        ...estado,
+        estado_partida: {
+          ...estado.estado_partida,
+          turno: {
+            ...estado.estado_partida.turno,
+            paso: 'confirmacion'
+          }
+        }
+      };
+
     case 'USAR_COMODIN':
       return {
         ...estado,
@@ -117,9 +131,24 @@ function reducer(estado, accion) {
           ...estado.estado_partida,
           jugadores: accion.jugadores,
           turno: {
-            paso: accion.esSalvar ? 'eleccion' : 'en_curso',
-            actividad: accion.actividad,
-            origen: 'comodin_cambiar'
+            ...estado.estado_partida.turno,
+            paso: 'comodin_revelado',
+            actividad: accion.actividad || estado.estado_partida.turno.actividad,
+            comodin_activo: accion.comodin,
+            origen: accion.esSalvar ? 'comodin_salvar' : 'comodin_cambiar'
+          }
+        }
+      };
+
+    case 'CONTINUAR_COMODIN':
+      return {
+        ...estado,
+        estado_partida: {
+          ...estado.estado_partida,
+          turno: {
+            ...estado.estado_partida.turno,
+            paso: accion.pasoSiguiente,
+            actividad: accion.actividad || estado.estado_partida.turno.actividad
           }
         }
       };

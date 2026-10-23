@@ -3,7 +3,8 @@ import { obtenerBurlaAleatoria } from '../ui/burlas';
 
 /**
  * Componente del modal de cierre de la partida.
- * Muestra el podio, ridiculización, reto final y tabla de estadísticas.
+ * Muestra el podio con diseño de pedestales de honor, sección de ridiculización,
+ * reto del vaso completo y estadísticas finales detalladas.
  * 
  * @param {Object} estado - Estado actual de la partida.
  * @param {Function} dispatch - Función para despachar acciones al reducer.
@@ -38,133 +39,221 @@ function ModalCierre({ estado, dispatch }) {
     return '';
   };
 
-  return (
-    <div className="fixed inset-0 bg-fondo bg-opacity-95 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-superficie rounded-lg p-8 max-w-4xl w-full my-8">
-        <h2 className="text-3xl font-bold text-center mb-8">
-          {etiquetas.cierre.titulo}
-        </h2>
+  // Reorganizar los 3 primeros para el pedestal: [2º Lugar (izq), 1º Lugar (centro), 3º Lugar (der)]
+  const primero = jugadoresOrdenados[0];
+  const segundo = jugadoresOrdenados[1];
+  const tercero = jugadoresOrdenados[2];
 
+  return (
+    <div className="fixed inset-0 bg-fondo/95 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-superficie rounded-2xl p-6 md:p-10 max-w-4xl w-full my-8 shadow-2xl border border-slate-700/60 space-y-8">
+        
+        {/* Cabecera del Cierre */}
+        <div className="text-center space-y-2 border-b border-neutro/40 pb-6">
+          <span className="text-xs font-condensada uppercase tracking-widest text-activo font-bold bg-activo/10 px-3 py-1 rounded-full border border-activo/30">
+            Fin de la Partida
+          </span>
+          <h2 className="text-4xl md:text-5xl font-condensada font-bold uppercase tracking-wide text-texto">
+            {etiquetas.cierre.titulo}
+          </h2>
+        </div>
+
+        {/* Podio con Pedestales */}
         {!resultado_final?.esSinGanador && jugadoresOrdenados.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-center mb-4 text-accion">
-              {etiquetas.cierre.podio}
+          <div className="space-y-4">
+            <h3 className="text-center font-condensada font-bold uppercase tracking-wider text-xl text-accion">
+              PODIO DE HONOR: «EL MENOS HIDRATADO»
             </h3>
-            <div className="flex justify-center items-end gap-4">
-              {jugadoresOrdenados.slice(0, 3).map((jugador, indice) => (
-                <div
-                  key={indice}
-                  className={`bg-fondo rounded-lg p-4 text-center ${
-                    indice === 0 ? 'w-48 h-56 border-4 border-activo' :
-                    indice === 1 ? 'w-40 h-48 border-4 border-neutro' :
-                    'w-32 h-40 border-4 border-neutro opacity-70'
-                  }`}
-                >
-                  <div className="text-4xl font-bold text-accion mb-2">
-                    {indice + 1}
+
+            <div className="flex justify-center items-end gap-3 md:gap-6 pt-10 pb-4">
+              {/* 2º Lugar */}
+              {segundo && (
+                <div className="flex-1 max-w-[180px] flex flex-col items-center">
+                  <div className="mb-2 text-center">
+                    <span className="text-xs font-condensada font-bold uppercase text-slate-400 block">
+                      2º LUGAR
+                    </span>
+                    <span className="font-condensada font-bold uppercase text-lg text-texto block truncate max-w-[140px]">
+                      {segundo.nombre}
+                    </span>
+                    <span className="text-xs font-condensada font-bold text-slate-300">
+                      {segundo.liquido_acumulado}s acumulados
+                    </span>
                   </div>
-                  <div className="font-bold text-lg mb-1">{jugador.nombre}</div>
-                  <div className="text-textoSecundario">{jugador.liquido_acumulado}s</div>
-                  {indice === 0 && (
-                    <div className="mt-2 text-sm text-activo font-semibold">
-                      {etiquetas.cierre.primerLugar}
-                    </div>
-                  )}
+                  <div className="w-full h-32 bg-slate-700/80 rounded-t-xl border-t-4 border-slate-400 flex items-center justify-center shadow-lg">
+                    <span className="text-4xl font-condensada font-bold text-slate-300">2</span>
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* 1º Lugar - Campeón */}
+              {primero && (
+                <div className="flex-1 max-w-[210px] flex flex-col items-center">
+                  <div className="mb-2 text-center">
+                    <span className="text-xs font-condensada font-bold uppercase text-activo bg-activo/20 px-2.5 py-0.5 rounded-full inline-block mb-1 border border-activo/40">
+                      CAMPEÓN
+                    </span>
+                    <span className="font-condensada font-bold uppercase text-2xl text-texto block truncate max-w-[170px]">
+                      {primero.nombre}
+                    </span>
+                    <span className="text-sm font-condensada font-bold text-activo">
+                      {primero.liquido_acumulado}s acumulados
+                    </span>
+                  </div>
+                  <div className="w-full h-44 bg-activo/20 rounded-t-2xl border-t-4 border-activo flex flex-col items-center justify-center shadow-xl shadow-activo/20 border-x border-activo/30">
+                    <span className="text-6xl font-condensada font-bold text-activo">1</span>
+                    <span className="text-[11px] font-condensada font-bold uppercase tracking-wider text-white mt-1">
+                      EL MENOS HIDRATADO
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* 3º Lugar */}
+              {tercero && (
+                <div className="flex-1 max-w-[180px] flex flex-col items-center">
+                  <div className="mb-2 text-center">
+                    <span className="text-xs font-condensada font-bold uppercase text-amber-500 block">
+                      3º LUGAR
+                    </span>
+                    <span className="font-condensada font-bold uppercase text-lg text-texto block truncate max-w-[140px]">
+                      {tercero.nombre}
+                    </span>
+                    <span className="text-xs font-condensada font-bold text-slate-300">
+                      {tercero.liquido_acumulado}s acumulados
+                    </span>
+                  </div>
+                  <div className="w-full h-24 bg-slate-800 rounded-t-xl border-t-4 border-amber-600 flex items-center justify-center shadow-lg">
+                    <span className="text-4xl font-condensada font-bold text-amber-500">3</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {resultado_final?.esSinGanador && (
-          <div className="mb-8 text-center">
-            <h3 className="text-2xl font-bold text-peligro mb-4">
+          <div className="p-6 bg-peligro/10 border border-peligro/40 rounded-xl text-center space-y-2">
+            <h3 className="text-2xl font-condensada font-bold uppercase text-peligro">
               {etiquetas.cierre.sinGanador}
             </h3>
+            <p className="text-sm text-textoSecundario">
+              Todos los participantes fueron descalificados o se retiraron de la partida.
+            </p>
           </div>
         )}
 
+        {/* Sección de Ridiculización */}
         {(jugadoresCastigados.length > 0 || jugadoresDescalificados.length > 0) && (
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-center mb-4 text-peligro">
-              {etiquetas.cierre.ridiculizacion}
+          <div className="space-y-4">
+            <h3 className="font-condensada font-bold uppercase tracking-wider text-xl text-peligro text-center">
+              ZONA DE RIDICULIZACIÓN
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {jugadoresCastigados.map((jugador, indice) => (
-                <div key={`castigo-${indice}`} className="bg-fondo border-2 border-peligro rounded-lg p-4">
-                  <div className="font-bold text-lg mb-2">{jugador.nombre}</div>
-                  <div className="text-peligro text-sm mb-2">
-                    {jugador.puntos_negativos} puntos negativos
+                <div key={`castigo-${indice}`} className="bg-fondo/80 border border-peligro/50 rounded-xl p-4 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-condensada font-bold text-lg uppercase text-texto">
+                      {jugador.nombre}
+                    </span>
+                    <span className="text-xs font-condensada font-bold uppercase bg-peligro/20 text-peligro px-2 py-0.5 rounded">
+                      {jugador.puntos_negativos} negativas
+                    </span>
                   </div>
-                  <div className="text-textoSecundario text-sm italic">
+                  <p className="text-textoSecundario text-xs italic">
                     "{obtenerBurlaAleatoria()}"
-                  </div>
+                  </p>
                 </div>
               ))}
               {jugadoresDescalificados.map((jugador, indice) => (
-                <div key={`descalificado-${indice}`} className="bg-fondo border-2 border-peligro rounded-lg p-4 opacity-70">
-                  <div className="font-bold text-lg mb-2 line-through">{jugador.nombre}</div>
-                  <div className="text-peligro text-sm mb-2">
+                <div key={`descalificado-${indice}`} className="bg-fondo/80 border border-peligro rounded-xl p-4 space-y-1 opacity-80">
+                  <div className="flex justify-between items-center">
+                    <span className="font-condensada font-bold text-lg uppercase text-slate-400 line-through">
+                      {jugador.nombre}
+                    </span>
+                    <span className="text-xs font-condensada font-bold uppercase bg-peligro text-white px-2 py-0.5 rounded">
+                      DESCALIFICADO
+                    </span>
+                  </div>
+                  <p className="text-peligro text-xs font-semibold">
                     {obtenerTextoMotivo(jugador)}
-                  </div>
-                  <div className="text-textoSecundario text-sm italic">
+                  </p>
+                  <p className="text-textoSecundario text-xs italic">
                     "{obtenerBurlaAleatoria()}"
-                  </div>
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
+        {/* Reto Final: Vaso Completo */}
         {jugadoresRetoFinal.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-2xl font-bold text-center mb-4 text-accion">
-              {etiquetas.cierre.retoFinal}
+          <div className="p-6 bg-fondo/80 border border-accion/40 rounded-xl text-center space-y-3">
+            <h3 className="font-condensada font-bold uppercase tracking-wider text-xl text-accion">
+              RETO FINAL: VASO COMPLETO
             </h3>
-            <div className="bg-fondo rounded-lg p-6 text-center">
-              <p className="text-xl mb-4">{etiquetas.cierre.mensajeRetoFinal}</p>
-              <div className="space-y-2">
-                {jugadoresRetoFinal.map((jugador, indice) => (
-                  <div key={indice} className="text-textoSecundario">
-                    {jugador.nombre}
-                  </div>
-                ))}
-              </div>
+            <p className="text-sm text-textoSecundario max-w-lg mx-auto">
+              {etiquetas.cierre.mensajeRetoFinal}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2 pt-2">
+              {jugadoresRetoFinal.map((jugador, indice) => (
+                <span key={indice} className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs font-condensada font-bold uppercase text-texto">
+                  {jugador.nombre}
+                </span>
+              ))}
             </div>
           </div>
         )}
 
-        <div className="mb-8">
-          <h3 className="text-2xl font-bold text-center mb-4">
-            {etiquetas.cierre.estadisticas}
+        {/* Tabla de Estadísticas */}
+        <div className="space-y-3">
+          <h3 className="font-condensada font-bold uppercase tracking-wider text-lg text-texto">
+            Estadísticas Finales de la Partida
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutro">
-                  <th className="text-left py-2 px-4">Jugador</th>
-                  <th className="text-right py-2 px-4">Líquido (s)</th>
-                  <th className="text-right py-2 px-4">Comodines</th>
-                  <th className="text-right py-2 px-4">Actividades</th>
-                  <th className="text-right py-2 px-4">Negativos</th>
-                  <th className="text-left py-2 px-4">Estado</th>
+          <div className="overflow-x-auto rounded-xl border border-neutro/40">
+            <table className="w-full text-xs text-left bg-fondo/50">
+              <thead className="bg-slate-800/80 text-textoSecundario font-condensada uppercase tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-4">Jugador</th>
+                  <th className="py-2.5 px-4 text-right">Líquido Acumulado</th>
+                  <th className="py-2.5 px-4 text-right">Comodines Restantes</th>
+                  <th className="py-2.5 px-4 text-right">Retos Cumplidos</th>
+                  <th className="py-2.5 px-4 text-right">Puntos Negativos</th>
+                  <th className="py-2.5 px-4 text-center">Estado Final</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-neutro/20">
                 {jugadores.map((jugador, indice) => (
-                  <tr key={indice} className="border-b border-neutro">
-                    <td className="py-2 px-4 font-semibold">{jugador.nombre}</td>
-                    <td className="text-right py-2 px-4">{jugador.liquido_acumulado}</td>
-                    <td className="text-right py-2 px-4">{jugador.comodines}</td>
-                    <td className="text-right py-2 px-4">{jugador.actividades_cumplidas}</td>
-                    <td className="text-right py-2 px-4 text-peligro">{jugador.puntos_negativos}</td>
-                    <td className="py-2 px-4">
+                  <tr key={indice} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="py-2.5 px-4 font-bold text-texto font-condensada uppercase text-sm">
+                      {jugador.nombre}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-condensada font-bold text-texto">
+                      {jugador.liquido_acumulado}s
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-condensada text-textoSecundario">
+                      {jugador.comodines}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-condensada text-textoSecundario">
+                      {jugador.actividades_cumplidas}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-condensada font-bold text-peligro">
+                      {jugador.puntos_negativos}
+                    </td>
+                    <td className="py-2.5 px-4 text-center">
                       {jugador.descalificado ? (
-                        <span className="text-peligro">{etiquetas.juego.estadoDescalificado}</span>
+                        <span className="text-[11px] font-condensada font-bold uppercase text-peligro bg-peligro/10 px-2 py-0.5 rounded border border-peligro/30">
+                          {etiquetas.juego.estadoDescalificado}
+                        </span>
                       ) : jugador.retirado ? (
-                        <span className="text-neutro">{etiquetas.juego.estadoRetirado}</span>
+                        <span className="text-[11px] font-condensada font-bold uppercase text-neutro bg-slate-700/40 px-2 py-0.5 rounded">
+                          {etiquetas.juego.estadoRetirado}
+                        </span>
                       ) : (
-                        <span className="text-activo">{etiquetas.juego.estadoActivo}</span>
+                        <span className="text-[11px] font-condensada font-bold uppercase text-activo bg-activo/10 px-2 py-0.5 rounded border border-activo/30">
+                          {etiquetas.juego.estadoActivo}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -174,20 +263,22 @@ function ModalCierre({ estado, dispatch }) {
           </div>
         </div>
 
-        <div className="flex gap-4">
+        {/* Acciones Finales */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-neutro/40">
           <button
             onClick={() => dispatch({ tipo: 'REINICIAR_MISMA_CONFIGURACION' })}
-            className="flex-1 bg-activo hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 uppercase"
+            className="flex-1 bg-activo hover:bg-activoOscuro text-white font-condensada font-bold py-3.5 px-6 rounded-xl border-b-4 border-activoOscuro transition-colors duration-200 uppercase tracking-wider text-base"
           >
             {etiquetas.cierre.reiniciarMisma}
           </button>
           <button
             onClick={() => dispatch({ tipo: 'NUEVA_CONFIGURACION' })}
-            className="flex-1 bg-accion hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 uppercase"
+            className="flex-1 bg-accion hover:bg-accionOscuro text-white font-condensada font-bold py-3.5 px-6 rounded-xl border-b-4 border-accionOscuro transition-colors duration-200 uppercase tracking-wider text-base"
           >
             {etiquetas.cierre.nuevaConfiguracion}
           </button>
         </div>
+
       </div>
     </div>
   );
