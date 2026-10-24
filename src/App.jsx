@@ -180,6 +180,45 @@ function reducer(estado, accion) {
         }
       };
 
+    case 'INICIAR_MINIJUEGO':
+      return {
+        ...estado,
+        estado_partida: {
+          ...estado.estado_partida,
+          turno: {
+            ...estado.estado_partida.turno,
+            paso: 'minijuego',
+            resultado_minijuego: null
+          }
+        }
+      };
+
+    case 'COMPLETAR_MINIJUEGO':
+      return {
+        ...estado,
+        estado_partida: {
+          ...estado.estado_partida,
+          turno: {
+            ...estado.estado_partida.turno,
+            paso: 'eleccion',
+            resultado_minijuego: accion.resultado
+          }
+        }
+      };
+
+    case 'CANCELAR_MINIJUEGO':
+      return {
+        ...estado,
+        estado_partida: {
+          ...estado.estado_partida,
+          turno: {
+            ...estado.estado_partida.turno,
+            paso: 'eleccion',
+            resultado_minijuego: null
+          }
+        }
+      };
+
     case 'CERRAR_RONDA':
       return {
         ...estado,

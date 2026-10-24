@@ -109,7 +109,7 @@ function Configuracion({ dispatch, estado }) {
   };
 
   const manejarCambioJugadores = (valor) => {
-    const cantidad = Math.max(2, Math.min(12, parseInt(valor) || 2));
+    const cantidad = Math.max(2, Math.min(20, parseInt(valor) || 2));
     setTotalJugadores(cantidad);
     if (cantidad > nombresJugadores.length) {
       setNombresJugadores([...nombresJugadores, ...Array(cantidad - nombresJugadores.length).fill('')]);
@@ -200,7 +200,7 @@ function Configuracion({ dispatch, estado }) {
     const jugadores = nombresJugadores.map(nombre => ({
       nombre: nombre.trim(),
       liquido_acumulado: 0,
-      comodines: 2,
+      comodines: 3,
       actividades_cumplidas: 0,
       puntos_negativos: 0,
       castigos_activos: [],
@@ -261,14 +261,14 @@ function Configuracion({ dispatch, estado }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-black/20 p-4 md:p-6 rounded-2xl border border-white/10">
           <div>
             <label htmlFor="rango-jugadores" className="block text-sm font-condensada text-textoSecundario font-bold mb-2">
-              Jugadores (de 2 a 12)
+              Jugadores (de 2 a 20)
             </label>
             <div className="flex items-center gap-4">
               <input
                 id="rango-jugadores"
                 type="range"
                 min="2"
-                max="12"
+                max="20"
                 value={totalJugadores}
                 onChange={(e) => manejarCambioJugadores(e.target.value)}
                 className="w-full accent-accion h-2 cursor-pointer"

@@ -8,6 +8,7 @@ import {
 import RelojTrago from './RelojTrago';
 import PanelJuez from './PanelJuez';
 import ModalCastigo from './ModalCastigo';
+import Minijuego from './Minijuego';
 
 const paletasCategoria = [
   ['#D946EF', '#7C3AED'],
@@ -21,6 +22,21 @@ const paletasCategoria = [
 const paletaDeCategoria = (categoria = '') => {
   const suma = [...categoria].reduce((acc, c) => acc + c.charCodeAt(0), 0);
   return paletasCategoria[suma % paletasCategoria.length];
+};
+
+const imagenesActividades = [
+  '1 (1).png',
+  '1 (2).png',
+  '1 (3).png',
+  '1 (4).png',
+  '1 (5).png',
+  'Captura de pantalla 2026-10-24 090925.png'
+];
+
+const seleccionarImagenAleatoria = (idActividad) => {
+  if (!idActividad) return null;
+  const indice = (parseInt(idActividad) || 0) % imagenesActividades.length;
+  return `/imagenes/${imagenesActividades[indice]}`;
 };
 
 const capasBaraja = [
@@ -62,6 +78,7 @@ function AreaAccion({ estado, dispatch }) {
   const [animandoGiro, setAnimandoGiro] = useState(false);
   const [claveActividad, setClaveActividad] = useState(0);
   const [castigoMostrado, setCastigoMostrado] = useState(null);
+  const [minijuegoActivo, setMinijuegoActivo] = useState(false);
 
   const { turno, jugadores, indice_turno, ronda_actual } = estado.estado_partida;
   const jugadorActivo = jugadores[indice_turno];
@@ -183,6 +200,21 @@ function AreaAccion({ estado, dispatch }) {
     dispatch({ tipo: 'AVANZAR_TURNO', indiceTurno: jugadores.findIndex(j => j.nombre === siguienteJugador.nombre), jugadorActivo: siguienteJugador.nombre, juez: siguienteJuez.nombre, actividad: seleccionarActividadAleatoria() });
   };
 
+  const manejarIniciarMinijuego = () => {
+    setMinijuegoActivo(true);
+    dispatch({ tipo: 'INICIAR_MINIJUEGO' });
+  };
+
+  const manejarCompletarMinijuego = (resultado) => {
+    setMinijuegoActivo(false);
+    dispatch({ tipo: 'COMPLETAR_MINIJUEGO', resultado });
+  };
+
+  const manejarCancelarMinijuego = () => {
+    setMinijuegoActivo(false);
+    dispatch({ tipo: 'CANCELAR_MINIJUEGO' });
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="panel-cristal rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 md:p-5 flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 overflow-hidden">
@@ -222,7 +254,7 @@ function AreaAccion({ estado, dispatch }) {
         {actividadActual && (
           <div className="flex-1 min-h-0 flex flex-col items-center w-full gap-1.5 sm:gap-2">
             {/* Contenedor de la carta */}
-            <div className="relative w-full max-w-xl flex-1 min-h-0 perspective-1000 px-3 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-6">
+            <div className="relative w-full max-w-xl flex-1 min-h-[300px] sm:min-h-[350px] perspective-1000 px-3 sm:px-5 pt-3 sm:pt-4 pb-4 sm:pb-6">
               <CapasBaraja cantidad={cartasEnBaraja} colorA={barajaA} colorB={barajaB} clave={claveCarta} />
 
               <AnimatePresence mode="wait">
@@ -252,6 +284,15 @@ function AreaAccion({ estado, dispatch }) {
 
                       {/* Cuerpo de la carta */}
                       <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-3 sm:py-5 text-center flex flex-col space-y-2 sm:space-y-3 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
+                        {seleccionarImagenAleatoria(actividadActual?.id) && (
+                          <div className="flex justify-center mb-3">
+                            <img
+                              src={seleccionarImagenAleatoria(actividadActual?.id)}
+                              alt="Imagen de actividad"
+                              className="w-32 h-32 sm:w-35 sm:h-35 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+                            />
+                          </div>
+                        )}
                         <h3 className="fuente-juego text-tarjetaTexto text-lg sm:text-xl md:text-2xl leading-tight break-words">
                           {actividadActual.texto}
                         </h3>
@@ -319,7 +360,7 @@ function AreaAccion({ estado, dispatch }) {
 
             {/* Requerimiento / reloj */}
             {turno.paso !== 'comodin_revelado' ? (
-              <div className="text-center flex flex-col items-center justify-center flex-shrink-0 w-full py-1">
+              <div className="text-center flex flex-col items-center justify-center flex-shrink-0 w-full py-1 min-h-[80px]">
                 <span className="text-textoSecundario font-condensada font-bold uppercase tracking-wider text-[10px] sm:text-xs mb-0.5">
                   Requerimiento
                 </span>
@@ -400,6 +441,19 @@ function AreaAccion({ estado, dispatch }) {
                 )}
               </motion.button>
 
+              {actividadActual?.minijuego && (
+                <motion.button
+                  onClick={manejarIniciarMinijuego}
+                  whileHover={{ y: -2 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.75 }}
+                  className="flex-1 text-white font-condensada py-3 sm:py-3.5 px-2 sm:px-3 text-xs sm:text-sm md:text-base boton-juego boton-comodin cursor-pointer"
+                >
+                  <span className="block">Mini-juego</span>
+                </motion.button>
+              )}
+
               <motion.button
                 onClick={manejarNegarse}
                 whileHover={{ y: -2 }}
@@ -421,6 +475,13 @@ function AreaAccion({ estado, dispatch }) {
       </div>
 
       <ModalCastigo datos={castigoMostrado} alCerrar={() => setCastigoMostrado(null)} />
+      {minijuegoActivo && (
+        <Minijuego
+          actividad={actividadActual}
+          onCompletar={manejarCompletarMinijuego}
+          onCancelar={manejarCancelarMinijuego}
+        />
+      )}
     </div>
   );
 }

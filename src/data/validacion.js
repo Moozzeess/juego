@@ -17,7 +17,8 @@ const MAPEO_COLUMNAS = {
     descripcion: ['Descripcion', 'descripcion', 'Detalle', 'detalle'],
     categoria: ['Categoria', 'categoria', 'Tipo', 'tipo'],
     participantes: ['Participantes', 'participantes'],
-    trago_segundos: ['trago_segundos', 'Trago_Segundos', 'segundos', 'duracion']
+    trago_segundos: ['trago_segundos', 'Trago_Segundos', 'segundos', 'duracion'],
+    minijuego: ['minijuego', 'Minijuego', 'juego', 'Juego']
   },
   comodines: {
     id: ['id', 'ID', 'Id'],
@@ -169,6 +170,7 @@ function validarFilaActividad(fila, numeroFila) {
   const descripcion = fila.descripcion ? String(fila.descripcion).trim() : ''
   const categoria = fila.categoria ? String(fila.categoria).trim() : ''
   const participantes = fila.participantes ? String(fila.participantes).trim() : ''
+  const minijuego = fila.minijuego ? String(fila.minijuego).trim() : ''
   let tragoSegundos = fila.trago_segundos ? parseInt(fila.trago_segundos, 10) : null
 
   if (!id && id !== 0) {
@@ -198,6 +200,9 @@ function validarFilaActividad(fila, numeroFila) {
   }
   if (participantes) {
     dato.participantes = participantes
+  }
+  if (minijuego) {
+    dato.minijuego = minijuego
   }
 
   return {

@@ -1,5 +1,5 @@
-ID,Categoria,Actividad,Descripcion,Participantes
-1,Humor y Desafios Fisicos,No Te Rias (El Clasico del Escupitajo),Dos participantes sostienen buches de agua en la boca sin tragarselos mientras el grupo cuenta chistes o anecdotas vergonzosas. Pierde el primero en reirse o escupir.,2 competidores + 1 moderador
+ID,Categoria,Actividad,Descripcion,Participantes,Minijuego
+1,Humor y Desafios Fisicos,No Te Rias (El Clasico del Escupitajo),Dos participantes sostienen buches de agua en la boca sin tragarselos mientras el grupo cuenta chistes o anecdotas vergonzosas. Pierde el primero en reirse o escupir.,2 competidores + 1 moderador,cronometro5
 2,Humor y Desafios Fisicos,El Reto del Baile Balanceado,Executar pasos de baile o tendencias virales dando un sorbo de su vaso lleno en cada cambio de ritmo sin derramar el liquido.,1 a 3 bailarines
 3,Humor y Desafios Fisicos,Duelo de Miradas Tetricas,Sostener la mirada fija mientras ambos toman un trago continuo de jugo a la misma velocidad sin parpadear ni sonreir.,2 competidores
 4,Actuacion y Musica,Karaoke Ahogado,Cantar o tararear el coro de una cancion famosa manteniendo liquido en la boca. El grupo debe adivinar el tema en 30 segundos.,1 cantante + Grupo
@@ -7,7 +7,7 @@ ID,Categoria,Actividad,Descripcion,Participantes
 6,Confesiones y Chismes,Yo Nunca Nunca (Shot Hidratante),Afirmacion clasica Yo nunca nunca. Quien si haya realizado la accion debe tomarse un shot de jugo y contar la historia.,Todo el grupo
 7,Confesiones y Chismes,Subasta de Anecdotas,Decir el titular de una historia vergonzosa. El grupo debe pagar tragos acumulados de su vaso para obligar al jugador a contar los detalles.,Todo el grupo
 8,Confesiones y Chismes,Detector de Mentiras Liquido,Decir 2 verdades y 1 mentira. Quienes fallen en adivinar la mentira deben tomar un trago grande de su vaso de jugo.,1 declarante + Votantes
-9,Confesiones y Chismes,La Ruleta de Preguntas Incomodas,Girar una botella para seleccionar victima. Responde una pregunta incomoda o toma un vaso lleno de liquido de un solo trago.,Todo el grupo
+9,Confesiones y Chismes,La Ruleta de Preguntas Incomodas,Girar una botella para seleccionar victima. Responde una pregunta incomoda o toma un vaso lleno de liquido de un solo trago.,Todo el grupo,ruleta
 10,Trabajo en Equipo,Telefono Descompuesto con Buches,Susurrar una frase al oido del compañero con la boca llena de agua. El ultimo de la fila traga su liquido y dice lo que entendio.,Fila completa (Min. 4)
 11,Humor y Desafios Fisicos,Relevos de Vasos con Popote,Trasvasar liquido succionandolo con un popote de un vaso a otro y beber el contenido acumulado al terminar en 60 segundos.,Equipos de 2 o mas
 12,Actuacion y Musica,Mimica Hidratada,Representar una pelicula mediante mimica reteniendo un trago de agua en la boca sin tragarselo durante la actuacion.,1 actor + Adivinadores
@@ -23,7 +23,7 @@ ID,Categoria,Actividad,Descripcion,Participantes
 22,Confesiones y Chismes,El Juicio del Chisme,Acusar a alguien de un crimen vergonzoso; el acusado y el acusador deben tomar un trago de jugo antes de cada argumento.,3 participantes + Jurado
 23,Humor y Desafios Fisicos,"Piedra, Papel, Tijera, Trago","Duelo rapido de piedra, papel o tijera. El perdedor de cada ronda toma un sorbo obligatorio de su bebida.",2 competidores
 24,Actuacion y Musica,Gestos Exagerados,"Expresar una emocion extrema (terror, extasis, celos) unicamente en la forma en que tomas un sorbo de tu vaso.",1 actor + Grupo
-25,Agilidad Mental y Palabras,La Bomba de Palabras,Decir palabras de una categoria antes de 5 segundos; quien se traba o repita debe tomar un trago largo de jugo.,Todo el grupo
+25,Agilidad Mental y Palabras,La Bomba de Palabras,Decir palabras de una categoria antes de 5 segundos; quien se trabe o repita debe tomar un trago largo de jugo.,Todo el grupo,contar10
 26,Humor y Desafios Fisicos,Cara de Poker Liquida,Beber un vaso de agua despacio con rostro neutro mientras los demas intentan hacerte reir con piropos y muecas.,1 participante + Provocadores
 27,Trabajo en Equipo,Batalla de Complices,Formar parejas secretas que deben hacer señas disimuladas para beber de sus vasos al mismo tiempo sin ser descubiertos.,Parejas en el grupo
 28,Actuacion y Musica,El Poeta del Jugo,Recitar un poema tragico e improvisado sobre un examen reprobado dando un sorbo melancolico al final de cada estrofa.,1 declamador
