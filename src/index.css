@@ -1,3 +1,6 @@
+/* Las fuentes deben ir ANTES de @tailwind */
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,38 +12,134 @@ html {
 body {
   margin: 0;
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: #0F172A;
   color: #F8FAFC;
   min-height: 100vh;
   overflow-x: hidden;
+
+  /* Fondo con profundidad */
+  background-color: #0B1120;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(124, 58, 237, 0.28), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(16, 185, 129, 0.18), transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), transparent 60%);
+  background-attachment: fixed;
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Efecto de perspectiva y giro de tarjeta (Card Flip) */
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.transform-style-3d {
-  transform-style: preserve-3d;
-}
-
-.backface-hidden {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
-
-/* Asegurar que el layout se ajuste correctamente */
 #root {
   min-height: 100vh;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+/* ---------- Card Flip (lo que ya tenías) ---------- */
+.perspective-1000 { perspective: 1000px; }
+.transform-style-3d { transform-style: preserve-3d; }
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 { transform: rotateY(180deg); }
+
+/* ---------- Utilidades nuevas ---------- */
+@layer components {
+  /* Fuente de juego para títulos y números grandes */
+  .fuente-juego {
+    font-family: 'Bungee', 'Inter', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  /* Paneles con efecto cristal */
+  .panel-cristal {
+    background: rgba(30, 41, 59, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* Borde de degradado para la carta de actividad */
+  .borde-carta {
+    padding: 3px;
+    background: linear-gradient(135deg, #D946EF, #8B5CF6, #22D3EE);
+    box-shadow: 0 20px 60px rgba(124, 58, 237, 0.45);
+  }
+
+  /* Texto con degradado (para "¡BEBE 6 SEGUNDOS!") */
+  .texto-fuego {
+    background: linear-gradient(90deg, #EF4444, #F97316, #FACC15);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 4px 18px rgba(239, 68, 68, 0.55));
+  }
+
+  /* Botones con volumen (efecto tecla) */
+  .boton-juego {
+    border-bottom-width: 5px;
+    border-radius: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: transform 0.1s, filter 0.2s, border-bottom-width 0.1s;
+  }
+  .boton-juego:hover { filter: brightness(1.12); }
+  .boton-juego:active {
+    transform: translateY(4px);
+    border-bottom-width: 1px;
+  }
+  .boton-aceptar {
+    background: linear-gradient(180deg, #34D399, #059669);
+    border-color: #047857;
+    box-shadow: 0 10px 28px rgba(16, 185, 129, 0.4);
+  }
+  .boton-comodin {
+    background: linear-gradient(180deg, #60A5FA, #2563EB);
+    border-color: #1D4ED8;
+    box-shadow: 0 10px 28px rgba(59, 130, 246, 0.4);
+  }
+  .boton-negar {
+    background: linear-gradient(180deg, #F87171, #DC2626);
+    border-color: #B91C1C;
+    box-shadow: 0 10px 28px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* ---------- Animaciones ---------- */
+@keyframes brillo-activo {
+  0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.35); }
+  50%      { box-shadow: 0 0 26px rgba(16, 185, 129, 0.75); }
+}
+.jugador-activo-glow {
+  animation: brillo-activo 2s ease-in-out infinite;
+}
+
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+.animar-latido {
+  animation: latido 1.2s ease-in-out infinite;
+}
+
+@keyframes sacudida {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animar-sacudida {
+  animation: sacudida 0.45s ease-in-out;
+}
+
+/* Respeta a quien prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

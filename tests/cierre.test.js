@@ -100,7 +100,7 @@ describe('Prueba 10: Gana el menor liquido_acumulado entre no descalificados', (
     expect(ranking[0].nombre).toBe('Carla')
   })
 
-  it('el primer lugar del podio es EL MENOS HIDRATADO', () => {
+  it('el primer lugar del podio es EL MENOS PEDO', () => {
     const estado = crearEstadoPrueba()
 
     estado.jugadores[0].actividades_cumplidas = 2
@@ -115,7 +115,7 @@ describe('Prueba 10: Gana el menor liquido_acumulado entre no descalificados', (
     const ranking = generarRanking(estado.jugadores)
     const podio = generarPodio(ranking)
 
-    expect(podio[0].titulo).toBe('EL MENOS HIDRATADO')
+    expect(podio[0].titulo).toBe('EL MENOS PEDO')
     expect(podio[0].nombre).toBe('Bruno')
   })
 })

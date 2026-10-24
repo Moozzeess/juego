@@ -27,14 +27,14 @@ function generarRanking(jugadores) {
 
 /**
  * Obtiene los tres mejores puntajes para el podio.
- * El primer lugar recibe el titulo 'EL MENOS HIDRATADO'.
+ * El primer lugar recibe el titulo 'EL MENOS PEDO'.
  *
  * @param {Array<Object>} ranking - Ranking ya ordenado por liquido_acumulado.
  * @returns {Array<Object>} Arreglo con hasta 3 jugadores del podio,
  *   cada uno con su posicion y titulo.
  */
 function generarPodio(ranking) {
-  const titulos = ['EL MENOS HIDRATADO', 'Segundo lugar', 'Tercer lugar']
+  const titulos = ['EL MENOS PEDO', 'Segundo lugar', 'Tercer lugar']
 
   return ranking.slice(0, 3).map((jugador, indice) => ({
     posicion: indice + 1,

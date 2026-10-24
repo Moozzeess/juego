@@ -1,24 +1,118 @@
+import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { etiquetas } from '../ui/etiquetas';
 import { obtenerBurlaAleatoria } from '../ui/burlas';
 
+// Mismos colores que usan el Marcador y la Configuración
+const coloresAvatar = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899'];
+
+// Metal de cada pedestal
+const estilosPuesto = {
+  1: {
+    degradado: 'linear-gradient(180deg, #FDE68A 0%, #F59E0B 55%, #B45309 100%)',
+    brillo: '0 0 50px rgba(250, 204, 21, 0.55)',
+    numero: 'text-amber-950',
+    altura: 'h-36 md:h-48',
+    retraso: 0.9
+  },
+  2: {
+    degradado: 'linear-gradient(180deg, #E2E8F0 0%, #94A3B8 60%, #475569 100%)',
+    brillo: '0 0 30px rgba(148, 163, 184, 0.35)',
+    numero: 'text-slate-800',
+    altura: 'h-28 md:h-36',
+    retraso: 0.5
+  },
+  3: {
+    degradado: 'linear-gradient(180deg, #FDBA74 0%, #EA580C 60%, #7C2D12 100%)',
+    brillo: '0 0 30px rgba(234, 88, 12, 0.35)',
+    numero: 'text-orange-950',
+    altura: 'h-20 md:h-28',
+    retraso: 0.2
+  }
+};
+
+/**
+ * Un pedestal del podio. El de primer lugar es más grande y entra el último.
+ */
+function Pedestal({ jugador, puesto }) {
+  const estilo = estilosPuesto[puesto];
+  const esCampeon = puesto === 1;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 70 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 110, damping: 14, delay: estilo.retraso }}
+      className={`flex-1 flex flex-col items-center ${
+        esCampeon ? 'max-w-[170px] md:max-w-[230px]' : 'max-w-[130px] md:max-w-[180px]'
+      }`}
+    >
+      <div className="mb-2 text-center w-full">
+        {esCampeon && (
+          <svg
+            className="w-8 h-8 md:w-10 md:h-10 mx-auto mb-1 text-yellow-300 drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5L3 7z" />
+          </svg>
+        )}
+        <span
+          className={`fuente-juego block truncate ${
+            esCampeon ? 'text-xl md:text-3xl text-white' : 'text-base md:text-xl text-texto'
+          }`}
+        >
+          {jugador.nombre}
+        </span>
+        <span className={`font-condensada font-bold ${esCampeon ? 'text-sm md:text-base text-yellow-300' : 'text-xs md:text-sm text-slate-300'}`}>
+          {jugador.liquido_acumulado}s
+        </span>
+      </div>
+
+      <div
+        className={`w-full ${estilo.altura} rounded-t-2xl flex flex-col items-center justify-center`}
+        style={{ background: estilo.degradado, boxShadow: estilo.brillo }}
+      >
+        <span className={`fuente-juego text-4xl md:text-6xl ${estilo.numero}`}>{puesto}</span>
+        {esCampeon && (
+          <span className="font-condensada font-bold text-[11px] md:text-xs text-amber-950 mt-1">
+            El menos pedo
+          </span>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 /**
  * Componente del modal de cierre de la partida.
- * Muestra el podio con diseño de pedestales de honor, sección de ridiculización,
- * reto del vaso completo y estadísticas finales detalladas.
- * 
+ * Muestra el podio, la sección de burlas, el reto del vaso completo
+ * y las estadísticas finales.
+ *
  * @param {Object} estado - Estado actual de la partida.
  * @param {Function} dispatch - Función para despachar acciones al reducer.
  */
 function ModalCierre({ estado, dispatch }) {
   const { jugadores, resultado_final } = estado.estado_partida;
-  
+
+  // Las burlas se eligen UNA vez por jugador. Antes se llamaba a
+  // obtenerBurlaAleatoria() dentro del render, así que el texto cambiaba
+  // cada vez que el componente se volvía a renderizar.
+  const burlas = useMemo(
+    () => Object.fromEntries(jugadores.map(j => [j.nombre, obtenerBurlaAleatoria()])),
+    [jugadores]
+  );
+
   const jugadoresNoDescalificados = jugadores.filter(j => !j.descalificado && !j.retirado);
-  const jugadoresOrdenados = [...jugadoresNoDescalificados].sort((a, b) => 
+  const jugadoresOrdenados = [...jugadoresNoDescalificados].sort((a, b) =>
     a.liquido_acumulado - b.liquido_acumulado
   );
 
-  const jugadoresCastigados = jugadores.filter(j => j.puntos_negativos > 0);
   const jugadoresDescalificados = jugadores.filter(j => j.descalificado);
+  // Un descalificado con puntos negativos aparecía dos veces (en castigados y en
+  // descalificados). Ahora cada jugador sale en una sola tarjeta.
+  const jugadoresCastigados = jugadores.filter(j => j.puntos_negativos > 0 && !j.descalificado);
   const jugadoresSinBeber = jugadores.filter(j => j.liquido_acumulado === 0);
 
   const jugadoresRetoFinal = [
@@ -39,219 +133,175 @@ function ModalCierre({ estado, dispatch }) {
     return '';
   };
 
-  // Reorganizar los 3 primeros para el pedestal: [2º Lugar (izq), 1º Lugar (centro), 3º Lugar (der)]
   const primero = jugadoresOrdenados[0];
   const segundo = jugadoresOrdenados[1];
   const tercero = jugadoresOrdenados[2];
 
   return (
-    <div className="fixed inset-0 bg-fondo/95 backdrop-blur-md flex items-center justify-center p-3 md:p-4 lg:p-6 z-50 overflow-y-auto">
-      <div className="bg-superficie rounded-2xl p-4 md:p-6 lg:p-10 max-w-[95vw] md:max-w-4xl w-full my-4 md:my-8 shadow-2xl border border-slate-700/60 space-y-4 md:space-y-6 lg:space-y-8">
-        
-        {/* Cabecera del Cierre */}
-        <div className="text-center space-y-2 border-b border-neutro/40 pb-4 md:pb-6">
-          <span className="text-xs md:text-sm lg:text-base font-condensada uppercase tracking-widest text-activo font-bold bg-activo/10 px-2 md:px-3 py-1 rounded-full border border-activo/30">
-            Fin de la Partida
-          </span>
-          <h2 className="text-2xl md:text-4xl lg:text-5xl font-condensada font-bold uppercase tracking-wide text-texto">
+    <div className="fixed inset-0 bg-[#0B1120]/90 backdrop-blur-md flex items-start md:items-center justify-center p-3 md:p-4 lg:p-6 z-50 overflow-y-auto">
+      <div className="panel-cristal rounded-3xl p-4 md:p-6 lg:p-10 max-w-[95vw] md:max-w-4xl w-full my-4 md:my-8 space-y-6 md:space-y-8">
+
+        {/* Cabecera */}
+        <div className="text-center space-y-1">
+          <p className="text-sm md:text-base font-condensada font-bold text-textoSecundario">
+            Fin de la partida
+          </p>
+          <h2 className="fuente-juego texto-fuego text-3xl md:text-5xl lg:text-6xl leading-none">
             {etiquetas.cierre.titulo}
           </h2>
         </div>
 
-        {/* Podio con Pedestales */}
+        {/* Podio: el momento principal de esta pantalla */}
         {!resultado_final?.esSinGanador && jugadoresOrdenados.length > 0 && (
-          <div className="space-y-3 md:space-y-4">
-            <h3 className="text-center font-condensada font-bold uppercase tracking-wider text-base md:text-xl lg:text-2xl text-accion">
-              PODIO DE HONOR: «EL MENOS HIDRATADO»
+          <section className="space-y-2">
+            <h3 className="text-center fuente-juego text-base md:text-xl text-yellow-300">
+              Podio de honor
             </h3>
 
-            <div className="flex justify-center items-end gap-2 md:gap-4 lg:gap-6 pt-6 md:pt-10 pb-2 md:pb-4">
-              {/* 2º Lugar */}
-              {segundo && (
-                <div className="flex-1 max-w-[140px] md:max-w-[180px] flex flex-col items-center">
-                  <div className="mb-2 text-center">
-                    <span className="text-[10px] md:text-xs font-condensada font-bold uppercase text-slate-400 block">
-                      2º LUGAR
-                    </span>
-                    <span className="font-condensada font-bold uppercase text-sm md:text-lg lg:text-xl text-texto block truncate max-w-[120px] md:max-w-[140px]">
-                      {segundo.nombre}
-                    </span>
-                    <span className="text-[10px] md:text-xs font-condensada font-bold text-slate-300">
-                      {segundo.liquido_acumulado}s
-                    </span>
-                  </div>
-                  <div className="w-full h-24 md:h-32 bg-slate-700/80 rounded-t-xl border-t-4 border-slate-400 flex items-center justify-center shadow-lg">
-                    <span className="text-3xl md:text-4xl font-condensada font-bold text-slate-300">2</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 1º Lugar - Campeón */}
-              {primero && (
-                <div className="flex-1 max-w-[160px] md:max-w-[210px] flex flex-col items-center">
-                  <div className="mb-2 text-center">
-                    <span className="text-[10px] md:text-xs font-condensada font-bold uppercase text-activo bg-activo/20 px-2 md:px-2.5 py-0.5 rounded-full inline-block mb-1 border border-activo/40">
-                      CAMPEÓN
-                    </span>
-                    <span className="font-condensada font-bold uppercase text-lg md:text-2xl lg:text-3xl text-texto block truncate max-w-[140px] md:max-w-[170px]">
-                      {primero.nombre}
-                    </span>
-                    <span className="text-xs md:text-sm font-condensada font-bold text-activo">
-                      {primero.liquido_acumulado}s
-                    </span>
-                  </div>
-                  <div className="w-full h-32 md:h-44 bg-activo/20 rounded-t-2xl border-t-4 border-activo flex flex-col items-center justify-center shadow-xl shadow-activo/20 border-x border-activo/30">
-                    <span className="text-4xl md:text-6xl font-condensada font-bold text-activo">1</span>
-                    <span className="text-[10px] md:text-[11px] font-condensada font-bold uppercase tracking-wider text-white mt-1">
-                      EL MENOS HIDRATADO
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* 3º Lugar */}
-              {tercero && (
-                <div className="flex-1 max-w-[140px] md:max-w-[180px] flex flex-col items-center">
-                  <div className="mb-2 text-center">
-                    <span className="text-[10px] md:text-xs font-condensada font-bold uppercase text-amber-500 block">
-                      3º LUGAR
-                    </span>
-                    <span className="font-condensada font-bold uppercase text-sm md:text-lg lg:text-xl text-texto block truncate max-w-[120px] md:max-w-[140px]">
-                      {tercero.nombre}
-                    </span>
-                    <span className="text-[10px] md:text-xs font-condensada font-bold text-slate-300">
-                      {tercero.liquido_acumulado}s
-                    </span>
-                  </div>
-                  <div className="w-full h-20 md:h-24 bg-slate-800 rounded-t-xl border-t-4 border-amber-600 flex items-center justify-center shadow-lg">
-                    <span className="text-3xl md:text-4xl font-condensada font-bold text-amber-500">3</span>
-                  </div>
-                </div>
-              )}
+            {/* Orden visual: 2º a la izquierda, 1º al centro, 3º a la derecha */}
+            <div className="flex justify-center items-end gap-2 md:gap-5 pt-4 md:pt-8">
+              {segundo && <Pedestal jugador={segundo} puesto={2} />}
+              {primero && <Pedestal jugador={primero} puesto={1} />}
+              {tercero && <Pedestal jugador={tercero} puesto={3} />}
             </div>
-          </div>
+          </section>
         )}
 
         {resultado_final?.esSinGanador && (
-          <div className="p-4 md:p-6 bg-peligro/10 border border-peligro/40 rounded-xl text-center space-y-2">
-            <h3 className="text-xl md:text-2xl lg:text-3xl font-condensada font-bold uppercase text-peligro">
+          <div className="p-4 md:p-6 bg-peligro/10 border border-peligro/40 rounded-2xl text-center space-y-2">
+            <h3 className="fuente-juego text-xl md:text-3xl text-peligro">
               {etiquetas.cierre.sinGanador}
             </h3>
-            <p className="text-xs md:text-sm lg:text-base text-textoSecundario">
+            <p className="text-sm md:text-base text-textoSecundario">
               Todos los participantes fueron descalificados o se retiraron de la partida.
             </p>
           </div>
         )}
 
-        {/* Sección de Ridiculización */}
+        {/* Zona de ridiculización */}
         {(jugadoresCastigados.length > 0 || jugadoresDescalificados.length > 0) && (
-          <div className="space-y-3 md:space-y-4">
-            <h3 className="font-condensada font-bold uppercase tracking-wider text-base md:text-xl lg:text-2xl text-peligro text-center">
-              ZONA DE RIDICULIZACIÓN
+          <section className="space-y-3">
+            <h3 className="fuente-juego text-base md:text-xl text-peligro text-center">
+              Zona de ridiculización
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {jugadoresCastigados.map((jugador, indice) => (
-                <div key={`castigo-${indice}`} className="bg-fondo/80 border border-peligro/50 rounded-xl p-3 md:p-4 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-condensada font-bold text-sm md:text-lg lg:text-xl uppercase text-texto">
+              {jugadoresCastigados.map((jugador) => (
+                <div key={`castigo-${jugador.nombre}`} className="bg-black/25 border border-peligro/50 rounded-2xl p-3 md:p-4 space-y-1.5">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-condensada font-bold text-base md:text-xl uppercase text-texto truncate">
                       {jugador.nombre}
                     </span>
-                    <span className="text-[10px] md:text-xs font-condensada font-bold uppercase bg-peligro/20 text-peligro px-2 py-0.5 rounded">
-                      {jugador.puntos_negativos} negativas
+                    <span className="text-xs font-condensada font-bold bg-peligro/20 text-peligro px-2 py-0.5 rounded-full whitespace-nowrap">
+                      {jugador.puntos_negativos} negativa{jugador.puntos_negativos !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <p className="text-textoSecundario text-[10px] md:text-xs italic">
-                    "{obtenerBurlaAleatoria()}"
+                  <p className="text-textoSecundario text-xs md:text-sm italic">
+                    “{burlas[jugador.nombre]}”
                   </p>
                 </div>
               ))}
-              {jugadoresDescalificados.map((jugador, indice) => (
-                <div key={`descalificado-${indice}`} className="bg-fondo/80 border border-peligro rounded-xl p-3 md:p-4 space-y-1 opacity-80">
-                  <div className="flex justify-between items-center">
-                    <span className="font-condensada font-bold text-sm md:text-lg lg:text-xl uppercase text-slate-400 line-through">
+
+              {jugadoresDescalificados.map((jugador) => (
+                <div key={`descalificado-${jugador.nombre}`} className="bg-black/25 border-2 border-peligro rounded-2xl p-3 md:p-4 space-y-1.5">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-condensada font-bold text-base md:text-xl uppercase text-slate-400 line-through truncate">
                       {jugador.nombre}
                     </span>
-                    <span className="text-[10px] md:text-xs font-condensada font-bold uppercase bg-peligro text-white px-2 py-0.5 rounded">
-                      DESCALIFICADO
+                    <span className="text-xs font-condensada font-bold bg-peligro text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                      Descalificado
                     </span>
                   </div>
-                  <p className="text-peligro text-[10px] md:text-xs font-semibold">
+                  <p className="text-peligro text-xs md:text-sm font-semibold">
                     {obtenerTextoMotivo(jugador)}
                   </p>
-                  <p className="text-textoSecundario text-[10px] md:text-xs italic">
-                    "{obtenerBurlaAleatoria()}"
+                  <p className="text-textoSecundario text-xs md:text-sm italic">
+                    “{burlas[jugador.nombre]}”
                   </p>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Reto Final: Vaso Completo */}
+        {/* Reto final */}
         {jugadoresRetoFinal.length > 0 && (
-          <div className="p-4 md:p-6 bg-fondo/80 border border-accion/40 rounded-xl text-center space-y-2 md:space-y-3">
-            <h3 className="font-condensada font-bold uppercase tracking-wider text-base md:text-xl lg:text-2xl text-accion">
-              RETO FINAL: VASO COMPLETO
-            </h3>
-            <p className="text-xs md:text-sm lg:text-base text-textoSecundario max-w-lg mx-auto">
-              {etiquetas.cierre.mensajeRetoFinal}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2 pt-2">
-              {jugadoresRetoFinal.map((jugador, indice) => (
-                <span key={indice} className="px-2 md:px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] md:text-xs font-condensada font-bold uppercase text-texto">
-                  {jugador.nombre}
-                </span>
-              ))}
+          <section
+            className="rounded-2xl p-[2px]"
+            style={{ background: 'linear-gradient(135deg, #22D3EE, #3B82F6, #8B5CF6)', boxShadow: '0 12px 40px rgba(59,130,246,0.3)' }}
+          >
+            <div className="rounded-[14px] bg-[#0F172A]/95 p-4 md:p-6 text-center space-y-3">
+              <h3 className="fuente-juego text-base md:text-2xl text-accion">
+                Reto final: vaso completo
+              </h3>
+              <p className="text-sm md:text-base text-textoSecundario max-w-lg mx-auto">
+                {etiquetas.cierre.mensajeRetoFinal}
+              </p>
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                {jugadoresRetoFinal.map((jugador) => (
+                  <span key={jugador.nombre} className="px-3 py-1 bg-white/10 border border-white/15 rounded-full text-xs md:text-sm font-condensada font-bold uppercase text-texto">
+                    {jugador.nombre}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Tabla de Estadísticas */}
-        <div className="space-y-2 md:space-y-3">
-          <h3 className="font-condensada font-bold uppercase tracking-wider text-sm md:text-base lg:text-lg text-texto">
-            Estadísticas Finales de la Partida
+        {/* Estadísticas */}
+        <section className="space-y-3">
+          <h3 className="fuente-juego text-base md:text-lg text-texto">
+            Estadísticas finales
           </h3>
-          <div className="overflow-x-auto rounded-xl border border-neutro/40">
-            <table className="w-full text-[10px] md:text-xs lg:text-sm text-left bg-fondo/50">
-              <thead className="bg-slate-800/80 text-textoSecundario font-condensada uppercase tracking-wider">
+          <div className="overflow-x-auto rounded-2xl border border-white/10">
+            <table className="w-full text-xs md:text-sm text-left bg-black/20">
+              <thead className="bg-white/5 text-textoSecundario font-condensada">
                 <tr>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4">Jugador</th>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4 text-right">Líquido</th>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4 text-right">Comodines</th>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4 text-right">Retos</th>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4 text-right">Negativos</th>
-                  <th className="py-2 md:py-2.5 px-2 md:px-4 text-center">Estado</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold">Jugador</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold text-right">Líquido</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold text-right">Comodines</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold text-right">Retos</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold text-right">Negativos</th>
+                  <th className="py-2.5 px-3 md:px-4 font-bold text-center">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutro/20">
+              <tbody className="divide-y divide-white/5">
                 {jugadores.map((jugador, indice) => (
-                  <tr key={indice} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 font-bold text-texto font-condensada uppercase text-[10px] md:text-xs">
-                      {jugador.nombre}
+                  <tr key={jugador.nombre} className="hover:bg-white/5 transition-colors">
+                    <td className="py-2.5 px-3 md:px-4">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: coloresAvatar[indice % coloresAvatar.length] }}
+                          aria-hidden="true"
+                        />
+                        <span className="font-bold text-texto font-condensada uppercase">
+                          {jugador.nombre}
+                        </span>
+                      </div>
                     </td>
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 text-right font-condensada font-bold text-texto">
+                    <td className="py-2.5 px-3 md:px-4 text-right font-condensada font-bold text-texto">
                       {jugador.liquido_acumulado}s
                     </td>
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 text-right font-condensada text-textoSecundario">
+                    <td className="py-2.5 px-3 md:px-4 text-right font-condensada text-textoSecundario">
                       {jugador.comodines}
                     </td>
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 text-right font-condensada text-textoSecundario">
+                    <td className="py-2.5 px-3 md:px-4 text-right font-condensada text-textoSecundario">
                       {jugador.actividades_cumplidas}
                     </td>
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 text-right font-condensada font-bold text-peligro">
+                    <td className="py-2.5 px-3 md:px-4 text-right font-condensada font-bold text-peligro">
                       {jugador.puntos_negativos}
                     </td>
-                    <td className="py-2 md:py-2.5 px-2 md:px-4 text-center">
+                    <td className="py-2.5 px-3 md:px-4 text-center">
                       {jugador.descalificado ? (
-                        <span className="text-[10px] md:text-[11px] font-condensada font-bold uppercase text-peligro bg-peligro/10 px-2 py-0.5 rounded border border-peligro/30">
+                        <span className="text-xs font-condensada font-bold text-peligro bg-peligro/10 px-2 py-0.5 rounded-full border border-peligro/30">
                           {etiquetas.juego.estadoDescalificado}
                         </span>
                       ) : jugador.retirado ? (
-                        <span className="text-[10px] md:text-[11px] font-condensada font-bold uppercase text-neutro bg-slate-700/40 px-2 py-0.5 rounded">
+                        <span className="text-xs font-condensada font-bold text-neutro bg-slate-700/40 px-2 py-0.5 rounded-full">
                           {etiquetas.juego.estadoRetirado}
                         </span>
                       ) : (
-                        <span className="text-[10px] md:text-[11px] font-condensada font-bold uppercase text-activo bg-activo/10 px-2 py-0.5 rounded border border-activo/30">
+                        <span className="text-xs font-condensada font-bold text-activo bg-activo/10 px-2 py-0.5 rounded-full border border-activo/30">
                           {etiquetas.juego.estadoActivo}
                         </span>
                       )}
@@ -261,19 +311,19 @@ function ModalCierre({ estado, dispatch }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
 
-        {/* Acciones Finales */}
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 border-t border-neutro/40">
+        {/* Acciones finales */}
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 border-t border-white/10">
           <button
             onClick={() => dispatch({ tipo: 'REINICIAR_MISMA_CONFIGURACION' })}
-            className="flex-1 bg-activo hover:bg-activoOscuro text-white font-condensada font-bold py-3 md:py-3.5 px-4 md:px-6 rounded-xl border-b-4 border-activoOscuro transition-colors duration-200 uppercase tracking-wider text-sm md:text-base"
+            className="boton-juego boton-aceptar flex-1 text-white font-condensada py-3.5 px-4 md:px-6 text-base md:text-lg cursor-pointer"
           >
             {etiquetas.cierre.reiniciarMisma}
           </button>
           <button
             onClick={() => dispatch({ tipo: 'NUEVA_CONFIGURACION' })}
-            className="flex-1 bg-accion hover:bg-accionOscuro text-white font-condensada font-bold py-3 md:py-3.5 px-4 md:px-6 rounded-xl border-b-4 border-accionOscuro transition-colors duration-200 uppercase tracking-wider text-sm md:text-base"
+            className="boton-juego boton-comodin flex-1 text-white font-condensada py-3.5 px-4 md:px-6 text-base md:text-lg cursor-pointer"
           >
             {etiquetas.cierre.nuevaConfiguracion}
           </button>

@@ -19,7 +19,7 @@ function Partida({ estado, dispatch }) {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-fondo overflow-hidden">
-      <header className="bg-superficie border-b border-neutro px-4 py-2.5 flex-shrink-0">
+      <header className="panel-cristal border-neutro px-4 py-2.5 flex-shrink-0">
         <div className="max-w-[98vw] mx-auto flex justify-between items-center">
           <h1 className="text-xl md:text-2xl font-condensada font-bold text-texto uppercase">
             {etiquetas.juego.titulo}

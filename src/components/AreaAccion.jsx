@@ -1,21 +1,117 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { etiquetas } from '../ui/etiquetas';
 import { variantesTarjeta, variantesComodin, variantesCastigo, variantesCambioTurno, NumeroAnimado } from '../ui/animaciones.jsx';
 import RelojTrago from './RelojTrago';
 import PanelJuez from './PanelJuez';
+import ModalCastigo from './ModalCastigo';
+
+/**
+ * Paletas de degradado para las cartas. Cada categoría recibe siempre la misma
+ * paleta (se calcula a partir de su nombre), así que funciona con cualquier
+ * categoría nueva que agregues a tus datos sin tocar este archivo.
+ */
+const paletasCategoria = [
+  ['#D946EF', '#7C3AED'], // fucsia → violeta
+  ['#F97316', '#DC2626'], // naranja → rojo
+  ['#06B6D4', '#2563EB'], // cian → azul
+  ['#10B981', '#0D9488'], // verde → turquesa
+  ['#F59E0B', '#EA580C'], // ámbar → naranja
+  ['#EC4899', '#E11D48'], // rosa → carmesí
+];
+
+const paletaDeCategoria = (categoria = '') => {
+  const suma = [...categoria].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return paletasCategoria[suma % paletasCategoria.length];
+};
+
+/**
+ * Posición de cada carta de la baraja que asoma por detrás de la carta principal.
+ * La primera es la más cercana; las siguientes quedan más abajo y más giradas.
+ */
+const capasBaraja = [
+  { rotar: 1.5, x: 5, y: 4 },
+  { rotar: -2.2, x: -7, y: 7 },
+  { rotar: 3, x: 8, y: 10 }
+];
+
+/**
+ * Cartas apiladas detrás de la actividad: son los reversos de la baraja.
+ * Cada vez que cambia `clave` (nueva carta) salen de debajo de la principal
+ * y se abren en abanico. Con "reducir movimiento" aparecen ya colocadas.
+ *
+ * @param {number} cantidad - Cuántas cartas se asoman (0 a 3).
+ * @param {string} colorA - Primer color del borde.
+ * @param {string} colorB - Segundo color del borde.
+ * @param {number} clave - Cambia con cada carta nueva para repetir la animación.
+ */
+function CapasBaraja({ cantidad, colorA, colorB, clave }) {
+  const reducir = useReducedMotion();
+  if (cantidad <= 0) return null;
+
+  // Se pintan de la más lejana a la más cercana para que se apilen bien
+  const capas = capasBaraja.slice(0, cantidad).map((capa, i) => ({ ...capa, i })).reverse();
+
+  return (
+    <div className="pointer-events-none" aria-hidden="true">
+      {capas.map(({ i, rotar, x, y }) => (
+        <motion.div
+          key={`${i}-${clave}`}
+          className="absolute left-5 right-5 top-4 bottom-6 rounded-3xl p-[3px]"
+          style={{
+            background: `linear-gradient(135deg, ${colorA}, ${colorB})`,
+            filter: `brightness(${0.78 - i * 0.12})`,
+            boxShadow: '0 10px 28px rgba(0, 0, 0, 0.4)'
+          }}
+          initial={reducir ? false : { opacity: 0, x: 0, y: 0, rotate: 0 }}
+          animate={{ opacity: 1, x, y, rotate: rotar }}
+          transition={{ type: 'spring', stiffness: 120, damping: 14, delay: reducir ? 0 : 0.25 + i * 0.08 }}
+        >
+          {/* Reverso de la carta: fondo oscuro con rayado diagonal */}
+          <div
+            className="w-full h-full rounded-[22px] bg-[#0F172A]"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 6px, transparent 6px 14px)'
+            }}
+          />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Componente del área de acción principal.
  * Muestra la actividad actual, el reloj de trago y los botones de decisión.
- * 
+ *
  * @param {Object} estado - Estado actual de la partida.
  * @param {Function} dispatch - Función para despachar acciones al reducer.
  */
 function AreaAccion({ estado, dispatch }) {
-  const { turno, jugadores, indice_turno, ronda_actual, juez } = estado.estado_partida;
+  // Los hooks siempre van ANTES de cualquier return condicional
+  const [animandoGiro, setAnimandoGiro] = useState(false);
+  const [claveActividad, setClaveActividad] = useState(0);
+
+  // Castigo que se está mostrando en el modal (null = ninguno). Vive aquí, y no en
+  // PanelJuez, porque al terminar la validación el turno avanza y PanelJuez se oculta.
+  const [castigoMostrado, setCastigoMostrado] = useState(null);
+
+  const { turno, jugadores, indice_turno, ronda_actual } = estado.estado_partida;
   const jugadorActivo = jugadores[indice_turno];
   const { actividades, comodines } = estado.datos;
+
+  // Si el estado todavía no trae actividad, se usa una de respaldo. Se elige UNA vez
+  // por turno: antes se sorteaba en cada render y la carta podía cambiar sola
+  // (por ejemplo, al aceptar el reto).
+  const actividadRespaldo = useMemo(
+    () => (actividades.length > 0 ? actividades[Math.floor(Math.random() * actividades.length)] : null),
+    [jugadorActivo?.nombre, ronda_actual, actividades]
+  );
+
+  // La carta solo se anima cuando cambia el turno (lo decide el juez) o se usa un comodín.
+  // Aceptar el reto NO cambia esta clave.
+  const claveCarta = `${ronda_actual}-${indice_turno}-${claveActividad}`;
 
   if (!jugadorActivo) return null;
 
@@ -24,24 +120,31 @@ function AreaAccion({ estado, dispatch }) {
     return actividades[Math.floor(Math.random() * actividades.length)];
   };
 
-  const actividadActual = turno.actividad || seleccionarActividadAleatoria();
+  const actividadActual = turno.actividad || actividadRespaldo;
+  const [colorA, colorB] = paletaDeCategoria(actividadActual?.categoria);
+
+  // La baraja toma el color de lo que se está mostrando (azul si es un comodín)
+  const [barajaA, barajaB] = turno.paso === 'comodin_revelado'
+    ? ['#3B82F6', '#22D3EE']
+    : [colorA, colorB];
+  // Se asoman hasta 3 cartas, según cuántas actividades hay en el mazo
+  const cartasEnBaraja = Math.min(3, Math.max(0, actividades.length - 1));
 
   const manejarAceptar = () => {
-    setClaveActividad(prev => prev + 1);
+    // La actividad se mantiene: solo cambia de paso (en curso → confirmación del juez).
+    // Se envía la actividad mostrada para que el reducer la conserve en turno.actividad.
     dispatch({
-      tipo: 'ACEPTAR_RETO'
+      tipo: 'ACEPTAR_RETO',
+      actividad: actividadActual
     });
   };
-
-  const [animandoGiro, setAnimandoGiro] = useState(false);
-  const [claveActividad, setClaveActividad] = useState(0);
 
   const manejarComodin = () => {
     if (jugadorActivo.comodines === 0 || animandoGiro) return;
 
     const comodinAleatorio = comodines[Math.floor(Math.random() * comodines.length)];
     const nuevosJugadores = [...jugadores];
-    
+
     nuevosJugadores[indice_turno] = {
       ...jugadorActivo,
       comodines: jugadorActivo.comodines - 1
@@ -110,7 +213,7 @@ function AreaAccion({ estado, dispatch }) {
   const manejarNegarse = () => {
     const nuevosJugadores = [...jugadores];
     const tragoSegundos = actividadActual?.trago_segundos || 0;
-    
+
     nuevosJugadores[indice_turno] = {
       ...jugadorActivo,
       liquido_acumulado: jugadorActivo.liquido_acumulado + tragoSegundos,
@@ -135,6 +238,17 @@ function AreaAccion({ estado, dispatch }) {
       };
     }
 
+    if (castigoAleatorio) {
+      setCastigoMostrado({
+        jugador: jugadorActivo.nombre,
+        indice: indice_turno,
+        motivo: 'negarse',
+        castigo: castigoAleatorio,
+        actividad: actividadActual?.texto,
+        segundos: tragoSegundos
+      });
+    }
+
     dispatch({
       tipo: 'NEGARSE',
       jugadores: nuevosJugadores
@@ -143,7 +257,7 @@ function AreaAccion({ estado, dispatch }) {
 
   const manejarAvanzarTurno = () => {
     const jugadoresActivos = jugadores.filter(j => !j.descalificado && !j.retirado);
-    
+
     if (jugadoresActivos.length < 2) {
       dispatch({
         tipo: 'IR_A_CIERRE',
@@ -157,7 +271,7 @@ function AreaAccion({ estado, dispatch }) {
 
     const indiceJugadorActual = jugadoresActivos.findIndex(j => j.nombre === jugadorActivo.nombre);
     const siguienteIndice = (indiceJugadorActual + 1) % jugadoresActivos.length;
-    
+
     if (siguienteIndice === 0) {
       const jugadoresConCastigosActualizados = jugadores.map(j => ({
         ...j,
@@ -205,199 +319,232 @@ function AreaAccion({ estado, dispatch }) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="bg-superficie rounded-2xl p-3 md:p-4 flex-1 flex flex-col justify-between border border-neutro overflow-hidden">
-        
-        {/* Cabecera del panel de acción */}
+      <div className="panel-cristal rounded-3xl p-3 md:p-5 flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+
+        {/* Cabecera: el turno es el dato clave, así que el nombre va grande */}
         <div className="text-center flex-shrink-0">
-          <h2 className="font-condensada font-bold text-texto uppercase text-base md:text-lg tracking-wider mb-1">
-            ÁREA DE ACCIÓN
-          </h2>
-          <div>
-            <span className="text-textoSecundario font-condensada uppercase text-xs md:text-sm">
-              TURNO ACTUAL:
-            </span>
-            <span className="text-accion font-condensada font-bold uppercase text-sm md:text-base ml-2">
-              {jugadorActivo.nombre}
-            </span>
+          <p className="text-textoSecundario font-condensada font-bold uppercase tracking-wider text-xs md:text-sm">
+            Turno de
+          </p>
+          <motion.p
+            key={jugadorActivo.nombre}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fuente-juego text-3xl md:text-4xl leading-none text-white"
+            style={{ textShadow: `0 0 28px ${colorA}aa` }}
+          >
+            {jugadorActivo.nombre}
+          </motion.p>
+
+          {/* El castigo dura varias rondas: el jugador puede volver a leerlo en su turno */}
+          <div className="h-8 mt-1 flex items-center justify-center">
+          {jugadorActivo.castigos_activos.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setCastigoMostrado({
+                modo: 'consulta',
+                jugador: jugadorActivo.nombre,
+                indice: indice_turno,
+                castigos: jugadorActivo.castigos_activos
+              })}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-peligro/15 border border-peligro/50 text-red-200 text-xs md:text-sm font-condensada font-bold hover:bg-peligro/30 transition-colors cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              {jugadorActivo.castigos_activos.length === 1 ? 'Ver mi castigo' : 'Ver mis castigos'}
+            </button>
+          )}
           </div>
         </div>
 
         {actividadActual && (
-          <div className="my-auto flex flex-col items-center justify-center overflow-hidden w-full">
-            {/* Contenedor 3D con animacion de giro */}
-            <div className="w-full max-w-xl perspective-1000">
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center w-full gap-1">
+            {/* Contenedor 3D con animación de giro */}
+            <div className="relative w-full max-w-xl flex-1 min-h-[11rem] max-h-[24rem] perspective-1000 px-5 pt-4 pb-6">
+              <CapasBaraja
+                cantidad={cartasEnBaraja}
+                colorA={barajaA}
+                colorB={barajaB}
+                clave={claveCarta}
+              />
               <AnimatePresence mode="wait">
                 {turno.paso !== 'comodin_revelado' ? (
                   <motion.div
-                    key={`actividad-${claveActividad}`}
+                    key={`actividad-${claveCarta}`}
                     initial="entrada"
                     animate="activo"
                     exit="salida"
                     variants={variantesCambioTurno}
-                    className="w-full rounded-2xl overflow-hidden shadow-lg border border-slate-1 bg-superficie"
+                    className="relative z-10 w-full h-full rounded-3xl p-[3px]"
+                    style={{
+                      background: `linear-gradient(135deg, ${colorA}, ${colorB})`,
+                      boxShadow: `0 20px 60px ${colorA}66`
+                    }}
                   >
-                    <div className="bg-morado px-10 py-5 flex items-center justify-between">
-                      <motion.span 
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="text-texto font-condensada font-bold uppercase tracking-wider text-sm md:text-base"
+                    <div className="h-full flex flex-col rounded-[22px] overflow-hidden bg-tarjetaCuerpo">
+                      <div
+                        className="flex-shrink-0 px-5 py-3 flex items-center justify-between gap-3"
+                        style={{ background: `linear-gradient(135deg, ${colorA}, ${colorB})` }}
                       >
-                        TARJETA DE ACTIVIDAD
-                      </motion.span>
-                      {actividadActual.categoria && (
-                        <motion.span 
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.3 }}
-                          className="text-xs font-condensada font-bold uppercase tracking-wide px-2.5 py-0.5 bg-white/20 text-white rounded-full"
+                        <motion.span
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2 }}
+                          className="text-white font-condensada font-bold uppercase tracking-wider text-sm md:text-base"
                         >
-                          {actividadActual.categoria}
+                          Tarjeta de actividad
                         </motion.span>
-                      )}
-                    </div>
+                        {actividadActual.categoria && (
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="text-xs font-condensada font-bold uppercase tracking-wide px-3 py-1 bg-black/25 text-white rounded-full truncate max-w-[55%]"
+                          >
+                            {actividadActual.categoria}
+                          </motion.span>
+                        )}
+                      </div>
 
-                    <div className="bg-tarjetaCuerpo px-11 py-3 text-center space-y-2">
-                      <motion.h3 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="text-tarjetaTexto font-condensada font-bold uppercase text-xl md:text-2xl leading-snug break-words"
-                      >
-                        {actividadActual.texto}
-                      </motion.h3>
-
-                      {actividadActual.descripcion && (
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.5 }}
-                          className="border-t border-slate-100 pt-6"
+                      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 text-center flex flex-col space-y-3 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
+                        <motion.h3
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
+                          className="fuente-juego text-tarjetaTexto text-xl md:text-2xl leading-tight break-words"
                         >
-                          <p className="text-slate-800 font-sans text-bg md:text-xl leading-relaxed text-center font-normal">
-                            {actividadActual.descripcion}
-                          </p>
-                        </motion.div>
-                      )}
-                      
+                          {actividadActual.texto}
+                        </motion.h3>
+
+                        {actividadActual.descripcion && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                            className="border-t border-slate-200 pt-3"
+                          >
+                            <p className="text-slate-800 font-sans text-base md:text-xl leading-relaxed text-center font-normal">
+                              {actividadActual.descripcion}
+                            </p>
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 ) : (
                   /* Cara trasera: Tarjeta de Comodín Revelado */
                   <motion.div
-                    key={`comodin-${claveActividad}`}
+                    key={`comodin-${claveCarta}`}
                     initial="oculto"
                     animate="revelado"
                     variants={variantesComodin}
-                    className="w-full rounded-2xl overflow-hidden shadow-2xl border border-accion/60 bg-superficie"
+                    className="relative z-10 w-full h-full rounded-3xl p-[3px]"
+                    style={{
+                      background: 'linear-gradient(135deg, #60A5FA, #2563EB, #22D3EE)',
+                      boxShadow: '0 20px 60px rgba(59,130,246,0.5)'
+                    }}
                   >
-                    <div className="bg-accion px-5 py-2.5 flex items-center justify-between">
-                      <motion.span 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="text-white font-condensada font-bold uppercase tracking-wider text-sm md:text-base flex items-center gap-2"
-                      >
-                        <motion.svg 
-                          initial={{ rotate: -180, opacity: 0 }}
-                          animate={{ rotate: 0, opacity: 1 }}
-                          transition={{ delay: 0.4, duration: 0.5 }}
-                          className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"
+                    <div className="h-full flex flex-col rounded-[22px] overflow-hidden bg-tarjetaCuerpo">
+                      <div className="flex-shrink-0 bg-gradient-to-r from-blue-500 to-blue-700 px-5 py-3 flex items-center justify-between gap-3">
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className="text-white font-condensada font-bold uppercase tracking-wider text-sm md:text-base flex items-center gap-2"
                         >
-                          <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clipRule="evenodd" />
-                        </motion.svg>
-                        COMODÍN REVELADO
-                      </motion.span>
-                      <motion.span 
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="text-xs font-condensada font-bold uppercase px-2.5 py-0.5 bg-white/20 text-white rounded-full"
-                      >
-                        {turno.comodin_activo?.efecto === 'salvar' ? 'SALVARSE' : 'CAMBIO DE RETO'}
-                      </motion.span>
-                    </div>
-
-                    <div className="bg-tarjetaCuerpo px-5 py-4 text-center space-y-2">
-                      <motion.div 
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="inline-block px-2.5 py-0.5 bg-blue-100 text-accion font-condensada font-bold uppercase text-[11px] rounded-full"
-                      >
-                        Efecto aplicado
-                      </motion.div>
-
-                      <motion.h3 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.7 }}
-                        className="text-tarjetaTexto font-condensada font-bold uppercase text-xl md:text-2xl leading-snug break-words"
-                      >
-                        {turno.comodin_activo?.nombre || turno.comodin_activo?.texto}
-                      </motion.h3>
-
-                      <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.8 }}
-                        className="border-t border-slate-300 pt-2"
-                      >
-                        <p className="text-slate-700 font-sans text-xs md:text-sm leading-relaxed text-center font-normal">
-                          {turno.comodin_activo?.texto}
-                        </p>
-                      </motion.div>
-
-                      {turno.comodin_activo?.efecto === 'salvar' ? (
-                        <motion.div 
+                          <motion.svg
+                            initial={{ rotate: -180, opacity: 0 }}
+                            animate={{ rotate: 0, opacity: 1 }}
+                            transition={{ delay: 0.4, duration: 0.5 }}
+                            className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"
+                          >
+                            <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944z" clipRule="evenodd" />
+                          </motion.svg>
+                          Comodín revelado
+                        </motion.span>
+                        <motion.span
                           initial={{ opacity: 0, scale: 0.8 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.9 }}
-                          className="p-2 bg-activo/10 rounded-xl border border-activo/30"
+                          transition={{ delay: 0.5 }}
+                          className="text-xs font-condensada font-bold uppercase px-3 py-1 bg-black/25 text-white rounded-full truncate max-w-[55%]"
                         >
-                          <p className="text-activo font-condensada font-bold uppercase text-xs md:text-sm">
-                            ¡Te salvas de la actividad! No sumas segundos.
+                          {turno.comodin_activo?.efecto === 'salvar' ? 'Salvarse' : 'Cambio de reto'}
+                        </motion.span>
+                      </div>
+
+                      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 text-center flex flex-col space-y-3 [&>*:first-child]:mt-auto [&>*:last-child]:mb-auto">
+                        <motion.h3
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.7 }}
+                          className="fuente-juego text-tarjetaTexto text-xl md:text-2xl leading-tight break-words"
+                        >
+                          {turno.comodin_activo?.nombre || turno.comodin_activo?.texto}
+                        </motion.h3>
+
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.8 }}
+                          className="border-t border-slate-200 pt-3"
+                        >
+                          <p className="text-slate-700 font-sans text-sm md:text-base leading-relaxed text-center font-normal">
+                            {turno.comodin_activo?.texto}
                           </p>
                         </motion.div>
-                      ) : (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.9 }}
-                          className="p-2 bg-accion/10 rounded-xl border border-accion/30 text-[11px] text-slate-700"
-                        >
-                          <span className="font-condensada font-bold uppercase text-accion block text-xs mb-0.5">
-                            Nueva actividad sustituta:
-                          </span>
-                          <span className="font-semibold">{actividadActual.texto}</span>
-                          <span className="block mt-0.5 font-condensada font-bold text-peligro">
-                            Trago: <NumeroAnimado valor={actividadActual.trago_segundos} />s
-                          </span>
-                        </motion.div>
-                      )}
+
+                        {turno.comodin_activo?.efecto === 'salvar' ? (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.9 }}
+                            className="p-3 bg-emerald-50 rounded-xl border border-emerald-300"
+                          >
+                            <p className="text-emerald-700 font-condensada font-bold uppercase text-sm md:text-base">
+                              ¡Te salvas de la actividad! No sumas segundos.
+                            </p>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.9 }}
+                            className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-sm text-slate-700"
+                          >
+                            <span className="font-condensada font-bold uppercase text-accion block text-xs mb-1">
+                              Nueva actividad sustituta
+                            </span>
+                            <span className="font-semibold">{actividadActual.texto}</span>
+                            <span className="block mt-1 font-condensada font-bold text-peligro">
+                              Trago: <NumeroAnimado valor={actividadActual.trago_segundos} />s
+                            </span>
+                          </motion.div>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            {/* Seccion de Requerimiento y Trompo con trago en segundos */}
+            {/* Requerimiento: es lo que el jugador tiene que hacer, así que es lo más grande */}
             {turno.paso !== 'comodin_revelado' ? (
-              <div className="mt-3 text-center flex flex-col items-center flex-shrink-0">
+              <div className="text-center flex flex-col items-center justify-center flex-shrink-0 min-h-[8rem]">
                 <span className="text-textoSecundario font-condensada font-bold uppercase tracking-wider text-xs mb-1">
-                  REQUERIMIENTO
+                  Requerimiento
                 </span>
 
                 {turno.paso === 'en_curso' ? (
-                  <RelojTrago 
-                    segundos={actividadActual?.trago_segundos || 0} 
+                  <RelojTrago
+                    segundos={actividadActual?.trago_segundos || 0}
                     activo={true}
                     dispatch={dispatch}
                   />
                 ) : (
                   <div className="flex flex-col items-center">
                     <div className="my-0.5 text-accion">
-                      <svg className="w-9 h-9" viewBox="0 0 48 48" fill="none">
+                      <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none">
                         <path d="M12 24 A12 12 0 0 1 36 24" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="3 3"/>
                         <path d="M36 24 A12 12 0 0 1 12 24" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="3 3"/>
                         <polygon points="24,6 34,16 28,38 24,42 20,38 14,16" fill="#1E293B" stroke="#94A3B8" strokeWidth="2"/>
@@ -408,33 +555,36 @@ function AreaAccion({ estado, dispatch }) {
                       </svg>
                     </div>
 
-                    <motion.div 
+                    {/* La entrada (framer) y el latido (CSS) van en elementos distintos
+                        para que sus transform no se pisen entre sí */}
+                    <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: 'spring', stiffness: 200 }}
-                      className="text-3xl md:text-4xl font-bold text-peligro font-condensada uppercase tracking-wide"
                     >
-                      ¡BEBE <NumeroAnimado valor={actividadActual.trago_segundos} /> SEGUNDOS!
+                      <div className="animar-latido fuente-juego texto-fuego text-2xl md:text-4xl uppercase tracking-wide">
+                        ¡Bebe <NumeroAnimado valor={actividadActual.trago_segundos} /> segundos!
+                      </div>
                     </motion.div>
                   </div>
                 )}
               </div>
             ) : (
-              /* Accion de confirmacion tras revelar comodin */
-              <div className="mt-3 w-full max-w-xl flex-shrink-0">
+              /* Acción de confirmación tras revelar comodín */
+              <div className="w-full max-w-xl flex-shrink-0 min-h-[8rem] flex flex-col justify-center">
                 {turno.comodin_activo?.efecto === 'salvar' ? (
                   <button
                     onClick={manejarContinuarComodinSalvar}
-                    className="w-full bg-activo hover:bg-activoOscuro text-white font-condensada font-bold py-3 px-6 rounded-xl border-b-4 border-activoOscuro transition-colors duration-200 uppercase tracking-wider text-base"
+                    className="boton-juego boton-aceptar w-full text-white font-condensada py-3 px-6 tracking-wider text-base"
                   >
-                    CONTINUAR Y SALVAR TURNO
+                    Continuar y salvar turno
                   </button>
                 ) : (
                   <button
                     onClick={manejarContinuarComodinCambiar}
-                    className="w-full bg-accion hover:bg-accionOscuro text-white font-condensada font-bold py-3 px-6 rounded-xl border-b-4 border-accionOscuro transition-colors duration-200 uppercase tracking-wider text-base"
+                    className="boton-juego boton-comodin w-full text-white font-condensada py-3 px-6 tracking-wider text-base"
                   >
-                    ASUMIR NUEVO RETO CAMBIADO
+                    Asumir nuevo reto
                   </button>
                 )}
               </div>
@@ -442,81 +592,66 @@ function AreaAccion({ estado, dispatch }) {
           </div>
         )}
 
-        {/* Botones de decisión fijos al pie sin overflow */}
+        {/* Zona inferior de altura fija: así el panel no se encoge ni crece al cambiar de paso */}
+        <div className="flex-shrink-0 min-h-[9.5rem] flex flex-col justify-end">
+        {/* Botones de decisión. Aceptar pesa más: es la acción principal */}
         {turno.paso === 'eleccion' && (
           <div className="flex gap-3 mt-2 flex-shrink-0">
             <motion.button
               onClick={manejarAceptar}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 bg-activo text-white font-condensada font-bold py-2.5 px-4 rounded-xl border-b-4 border-activoOscuro hover:bg-activoOscuro transition-colors duration-200 uppercase text-sm md:text-base cursor-pointer"
- initial={{ opacity: 0, y: 20 }}
+              whileHover={{ y: -2 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
+              className="boton-juego boton-aceptar flex-[1.4] text-white font-condensada py-3 px-4 text-base md:text-lg cursor-pointer"
             >
-              <motion.span
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                ACEPTAR RETO
-              </motion.span>
+              Aceptar reto
             </motion.button>
+
             <motion.button
               onClick={manejarComodin}
               disabled={jugadorActivo.comodines === 0}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex-1 font-condensada font-bold py-2.5 px-4 rounded-xl border-b-4 transition-colors duration-200 uppercase text-sm md:text-base ${
-                jugadorActivo.comodines === 0
-                  ? 'bg-neutro text-textoSecundario cursor-not-allowed opacity-50 border-neutro'
-                  : 'bg-accion text-white border-accionOscuro hover:bg-accionOscuro cursor-pointer'
-              }`}
+              whileHover={jugadorActivo.comodines === 0 ? {} : { y: -2 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
+              className={`flex-1 text-white font-condensada py-3 px-3 text-sm md:text-base ${
+                jugadorActivo.comodines === 0
+                  ? 'boton-juego bg-neutro border-slate-700 text-textoSecundario cursor-not-allowed opacity-50'
+                  : 'boton-juego boton-comodin cursor-pointer'
+              }`}
             >
-              {jugadorActivo.comodines === 0 ? 'SIN COMODINES' : (
+              {jugadorActivo.comodines === 0 ? 'Sin comodines' : (
                 <>
-                  <motion.span
-                    animate={{ rotate: jugadorActivo.comodines > 0 ? [0, 5, -5, 0] : 0 }}
-                    transition={{ duration: 0.5, repeat: jugadorActivo.comodines > 0 ? Infinity : 0 }}
-                  >
-                    USAR COMODÍN
-                  </motion.span>
-                  <span className="block text-[11px] font-normal">
-                    (<NumeroAnimado valor={jugadorActivo.comodines} /> DISPONIBLE{jugadorActivo.comodines !== 1 ? 'S' : ''})
+                  <span className="block">Usar comodín</span>
+                  <span className="block text-[11px] font-normal normal-case opacity-90">
+                    <NumeroAnimado valor={jugadorActivo.comodines} /> disponible{jugadorActivo.comodines !== 1 ? 's' : ''}
                   </span>
                 </>
               )}
             </motion.button>
+
             <motion.button
               onClick={manejarNegarse}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex-1 bg-peligro text-white font-condensada font-bold py-2.5 px-4 rounded-xl border-b-4 border-peligroOscuro hover:bg-peligroOscuro transition-colors duration-200 uppercase text-sm md:text-base cursor-pointer"
+              whileHover={{ y: -2 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
+              className="boton-juego boton-negar flex-1 text-white font-condensada py-3 px-3 text-sm md:text-base cursor-pointer"
             >
-              NEGARSE Y ASUMIR CASTIGO
-              <span className="block text-[11px] font-normal flex items-center justify-center gap-1">
-                <motion.svg 
-                  className="w-3.5 h-3.5" 
-                  fill="currentColor" 
-                  viewBox="0 0 20 20"
-                  animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
-                  transition={{ duration: 0.5, repeat: Infinity }}
-                >
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </motion.svg>
-                (RECIBIRÁS UN CASTIGO)
+              <span className="block">Negarse</span>
+              <span className="block text-[11px] font-normal normal-case opacity-90">
+                y recibir un castigo
               </span>
             </motion.button>
           </div>
         )}
 
-        <PanelJuez estado={estado} dispatch={dispatch} />
+        <PanelJuez estado={estado} dispatch={dispatch} alCastigar={setCastigoMostrado} />
+        </div>
       </div>
+
+      <ModalCastigo datos={castigoMostrado} alCerrar={() => setCastigoMostrado(null)} />
     </div>
   );
 }

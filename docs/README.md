@@ -1,4 +1,4 @@
-# EL MENOS HIDRATADO
+# EL MENOS PEDO
 
 Juego de consumo responsable con actividades, comodines y castigos. El objetivo es beber la menor cantidad de líquido posible.
 

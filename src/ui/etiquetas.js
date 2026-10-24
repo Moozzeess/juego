@@ -22,7 +22,7 @@ export const etiquetas = {
     errorNombres: "Todos los nombres deben ser únicos y no vacíos"
   },
   juego: {
-    titulo: "EL MENOS HIDRATADO",
+    titulo: "EL MENOS PEDO",
     ronda: "Ronda",
     de: "de",
     pausa: "Pausar",
@@ -68,7 +68,7 @@ export const etiquetas = {
   cierre: {
     titulo: "FIN DE LA PARTIDA",
     podio: "PODIO",
-    primerLugar: "EL MENOS HIDRATADO",
+    primerLugar: "EL MENOS PEDO",
     ridiculizacion: "RIDICULIZACIÓN",
     retoFinal: "RETO FINAL",
     mensajeRetoFinal: "Beber un vaso completo",

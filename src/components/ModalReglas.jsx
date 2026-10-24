@@ -1,5 +1,5 @@
 /**
- * Componente modal para consultar las reglas completas de «EL MENOS HIDRATADO».
+ * Componente modal para consultar las reglas completas de «EL MENOS PEDO».
  * Diseño adaptado a pantalla completa sin scroll vertical:
  * Organizado en una cuadrícula compacta de 2x2 que aprovecha todo el espacio disponible.
  *
@@ -11,7 +11,7 @@ function ModalReglas({ abierto, alCerrar }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 lg:p-8 bg-black/90 backdrop-blur-md overflow-hidden">
-      <div className="bg-superficie border border-slate-700/80 rounded-2xl w-full h-full max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[95vh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="panel-cristal rounded-2xl w-full h-full max-w-[95vw] md:max-w-[90vw] lg:max-w-[85vw] max-h-[95vh] md:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Cabecera del modal compacta y de alto impacto */}
         <div className="bg-slate-800 px-4 md:px-6 lg:px-8 py-3 md:py-4 flex items-center justify-between border-b border-slate-700 flex-shrink-0">
@@ -24,7 +24,7 @@ function ModalReglas({ abierto, alCerrar }) {
                 REGLAS DEL JUEGO
               </h2>
               <span className="text-xs md:text-sm lg:text-base text-textoSecundario font-sans">
-                «EL MENOS HIDRATADO» - Guía completa de juego
+                «EL MENOS PEDO» - Guía completa de juego
               </span>
             </div>
           </div>
@@ -202,7 +202,7 @@ function ModalReglas({ abierto, alCerrar }) {
         {/* Pie del modal compacto */}
         <div className="bg-slate-800 px-4 md:px-6 lg:px-8 py-3 md:py-4 flex justify-between items-center border-t border-slate-700 flex-shrink-0">
           <span className="text-xs md:text-sm lg:text-base text-slate-400 font-condensada uppercase hidden sm:inline">
-            El menos hidratado - Juego de consumo responsable
+            El menos PEDO - Juego de consumo responsable
           </span>
           <button
             onClick={alCerrar}

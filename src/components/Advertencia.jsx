@@ -13,7 +13,7 @@ function Advertencia({ dispatch }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-fondo p-4">
-      <div className="max-w-md w-full bg-superficie rounded-lg p-8 shadow-xl border-2 border-peligro">
+      <div className="max-w-md w-full panel-cristal rounded-lg p-8 shadow-xl border-2 border-peligro">
         <h1 className="text-3xl font-bold text-peligro text-center mb-6">
           {etiquetas.advertencia.titulo}
         </h1>
