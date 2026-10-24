@@ -45,6 +45,7 @@ test/
 *.dll
 *.so
 *.dmg
+*.py
 
 # Archivos pesados de medios y comprimidos (>50 MB)
 *.zip
