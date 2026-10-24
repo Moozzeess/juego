@@ -28,7 +28,6 @@ function Partida({ estado, dispatch }) {
             {etiquetas.juego.ronda} {ronda_actual} {etiquetas.juego.de} {rondas_totales}
           </div>
           <div className="flex items-center gap-2">
-            {/* Botón de Reglas del Juego */}
             <button
               onClick={() => setMostrarReglas(true)}
               title="Reglas del juego"
@@ -39,32 +38,21 @@ function Partida({ estado, dispatch }) {
               </svg>
               <span>Reglas</span>
             </button>
-
-            <button className="w-10 h-10 rounded-full bg-neutro hover:bg-accion flex items-center justify-center transition-colors">
-              <svg className="w-5 h-5 text-texto" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <button className="w-10 h-10 rounded-full bg-neutro hover:bg-accion flex items-center justify-center transition-colors">
-              <svg className="w-5 h-5 text-texto" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-            </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 p-2 md:p-3 overflow-hidden">
-        <div className="max-w-[98vw] mx-auto h-[calc(100vh-60px)] grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="md:col-span-1 h-full overflow-hidden">
+      <main className="flex-1 p-3 md:p-4 lg:p-6">
+        <div className="max-w-7xl mx-auto h-[calc(100vh-120px)] grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="lg:col-span-1 order-2 lg:order-1">
             <Marcador estado={estado} dispatch={dispatch} />
           </div>
           
-          <div className="md:col-span-2 h-full overflow-hidden">
+          <div className="lg:col-span-2 order-1 lg:order-2">
             <AreaAccion estado={estado} dispatch={dispatch} />
           </div>
           
-          <div className="md:col-span-1 h-full overflow-hidden">
+          <div className="lg:col-span-1 order-3 lg:order-3">
             <PanelApoyo estado={estado} />
           </div>
         </div>

@@ -2,11 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  font-size: 16px;
+}
+
 body {
   margin: 0;
   font-family: 'Inter', system-ui, sans-serif;
   background-color: #0F172A;
   color: #F8FAFC;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 * {
@@ -31,3 +37,10 @@ body {
   transform: rotateY(180deg);
 }
 
+/* Asegurar que el layout se ajuste correctamente */
+#root {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}

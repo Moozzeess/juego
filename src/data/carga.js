@@ -80,6 +80,50 @@ function validarDatos(tipo, datos) {
   }
 }
 
+/**
+ * Carga los archivos de ejemplo desde el directorio public/ejemplos/.
+ * 
+ * @returns {Promise<{ actividades: Array<Object>, comodines: Array<Object>, castigos: Array<Object> }>}
+ */
+async function cargarEjemplos() {
+  try {
+    const [actividadesResp, comodinesResp, castigosResp] = await Promise.all([
+      fetch('/ejemplos/actividades.csv'),
+      fetch('/ejemplos/comodines.csv'),
+      fetch('/ejemplos/castigos.csv')
+    ]);
+
+    if (!actividadesResp.ok || !comodinesResp.ok || !castigosResp.ok) {
+      throw new Error('Error al cargar archivos de ejemplo');
+    }
+
+    const actividadesTexto = await actividadesResp.text();
+    const comodinesTexto = await comodinesResp.text();
+    const castigosTexto = await castigosResp.text();
+
+    const actividadesParseadas = Papa.parse(actividadesTexto, { header: true, skipEmptyLines: true }).data;
+    const comodinesParseados = Papa.parse(comodinesTexto, { header: true, skipEmptyLines: true }).data;
+    const castigosParseados = Papa.parse(castigosTexto, { header: true, skipEmptyLines: true }).data;
+
+    const actividadesValidas = validarArchivoActividades(actividadesParseadas);
+    const comodinesValidos = validarArchivoComodines(comodinesParseados);
+    const castigosValidos = validarArchivoCastigos(castigosParseados);
+
+    if (actividadesValidas.errores.length > 0 || comodinesValidos.errores.length > 0 || castigosValidos.errores.length > 0) {
+      throw new Error('Error al validar archivos de ejemplo');
+    }
+
+    return {
+      actividades: actividadesValidas.datosValidos,
+      comodines: comodinesValidos.datosValidos,
+      castigos: castigosValidos.datosValidos
+    };
+  } catch (error) {
+    throw new Error(`Error al cargar ejemplos: ${error.message}`);
+  }
+}
+
 export {
   cargarArchivo,
+  cargarEjemplos,
 };
